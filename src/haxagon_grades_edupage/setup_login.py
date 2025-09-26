@@ -1,7 +1,10 @@
+import os
 from playwright.sync_api import Playwright, sync_playwright, expect
 
+AUTH_FILE = "auth.json"
+
 def run(playwright: Playwright) -> None:
-    browser = playwright.firefox.launch(headless=False, slow_mo=200)  # slow_mo = zpomalí akce, ať je to přehlednější
+    browser = playwright.firefox.launch(headless=False, slow_mo=200)
     context = browser.new_context()
     page = context.new_page()
 
@@ -11,44 +14,42 @@ def run(playwright: Playwright) -> None:
     # kliknout na odkaz "Přihlásit se"
     page.get_by_role("link", name="Přihlásit se pomocí účtu").click()
 
-    # počkat na zobrazení pole pro uživatelské jméno
+    # uživatelské jméno
     username = page.get_by_role("textbox", name="Uživatelské jméno:")
     expect(username).to_be_visible()
     username.fill("daniel.kopecky@itgymnazium.cz")
-
-    # kliknout na "Další" a počkat na přesměrování
     page.get_by_role("button", name="Další").click()
 
-    # počkat na pole pro heslo
+    # heslo z environment variable
+    password_value = os.environ.get("EDUPAGE_PASSWORD")
+    if not password_value:
+        raise RuntimeError("Heslo není nastaveno v EDUPAGE_PASSWORD")
+
     password = page.get_by_role("textbox", name="Zadejte heslo:")
     expect(password).to_be_visible()
-    password.fill("HDgVR8Sy")
-
-    # kliknout na "Další"
+    password.fill(password_value)
     page.get_by_role("button", name="Další").click()
 
-    # počkat na checkbox "Zapamatovat si přihlašovací"
-    
-
-    # remember = page.locator('[name="remember_usr"]')
-    remember = page.locator("label.mainlogin-block-checkbox").nth(0)
-    print(remember, remember.count())
-    # remember = page.get_by_role("checkbox", name="Zapamatovat si přihlašovací")
+    # checkbox "Zapamatovat si přihlašovací"
+    remember = page.get_by_label("Zapamatovat si přihlašovací jméno")
     expect(remember).to_be_visible()
     remember.check()
 
-    # kliknout na "Další"
+    # kliknout na "Uložit"
     page.get_by_role("button", name="Uložit").click()
 
-
-    # po úspěšném loginu počkat na cílovou stránku
+    # počkat na cílovou stránku
     page.wait_for_url("https://1itg.edupage.org/user/**")
-
     print("Login proběhl úspěšně:", page.url)
 
-    # ---------------------
+    # uložit session
+    context.storage_state(path=AUTH_FILE)
+    print(f"Session uložena do {AUTH_FILE}")
+
     context.close()
     browser.close()
 
-with sync_playwright() as playwright:
-    run(playwright)
+
+if __name__ == "__main__":
+    with sync_playwright() as playwright:
+        run(playwright)
