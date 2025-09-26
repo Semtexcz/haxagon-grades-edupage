@@ -30,8 +30,7 @@ def run(playwright: Playwright) -> None:
     password.fill(password_value)
     page.get_by_role("button", name="Další").click()
 
-    # checkbox "Zapamatovat si přihlašovací"
-    remember = page.get_by_label("Zapamatovat si přihlašovací jméno")
+    remember = page.locator("label.mainlogin-block-checkbox").nth(0)
     expect(remember).to_be_visible()
     remember.check()
 
