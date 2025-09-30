@@ -31,14 +31,18 @@ def run(playwright: Playwright) -> None:
 
 
     ###Zde začíná scénář
+    class_ = "3.gpu"
+    task_name = "Test/smažu"
+    task_points = "68"
+
     page.locator("#edubar").get_by_role("link", name="Známky").click()
-    page.get_by_text("3.gpu").nth(1).click()
+    page.get_by_text(class_).nth(1).click()
     page.locator("a").filter(has_text="Nová písemka/ zkoušení").click()
     page.locator("input[name=\"p_meno\"]").click()
-    page.locator("input[name=\"p_meno\"]").fill("Test/smažu")
+    page.locator("input[name=\"p_meno\"]").fill(task_name)
     page.locator("select[name=\"kategoriaid\"]").select_option("3")
     page.get_by_role("spinbutton").click()
-    page.get_by_role("spinbutton").fill("68")
+    page.get_by_role("spinbutton").fill(task_points)
     page.get_by_role("button", name="Uložit").click()
 
     # ---------------------

@@ -1,2 +1,6 @@
 .vscode/launch.json
 auth.json
+
+chatgpt.txt
+
+*.pyc

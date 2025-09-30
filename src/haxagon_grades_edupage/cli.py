@@ -3,10 +3,10 @@ from playwright.sync_api import sync_playwright
 from auth_manager import AuthManager
 
 # import všech scénářů
+from scenarios.create_task import CreateTaskScenario
 from scenarios.grades import GradesScenario
-from scenarios.timetable import TimetableScenario
 
-SCENARIOS = [GradesScenario, TimetableScenario]
+SCENARIOS = [GradesScenario, CreateTaskScenario]
 
 @click.group()
 def cli():
