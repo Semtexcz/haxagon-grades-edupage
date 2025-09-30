@@ -1,5 +1,7 @@
 from playwright.sync_api import sync_playwright
-from auth_manager import AuthManager
+
+from src.haxagon_grades_edupage.auth_manager import AuthManager
+
 
 def run_scenario(scenario_factory):
     """

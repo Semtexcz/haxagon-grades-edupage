@@ -1,6 +1,8 @@
 import click
-from .base import Scenario
-from scenario_runner import run_scenario
+
+from src.haxagon_grades_edupage.scenario_runner import run_scenario
+from src.haxagon_grades_edupage.scenarios.base import Scenario
+
 
 class CreateTaskScenario(Scenario):
     def __init__(self, class_: str, task_name: str, task_points: int):
@@ -9,6 +11,8 @@ class CreateTaskScenario(Scenario):
         self.task_points = task_points
 
     def run(self, page):
+        page.goto("https://1itg.edupage.org/users/", wait_until="domcontentloaded")
+
         # otevřít sekci známek
         page.locator("#edubar").get_by_role("link", name="Známky").click()
 
@@ -35,3 +39,11 @@ class CreateTaskScenario(Scenario):
         def run_task(class_, task_name, task_points):
             """Create a new test/task in EduPage."""
             run_scenario(lambda: cls(class_, task_name, task_points))
+
+if __name__ == "__main__":
+    # jednoduchý test bez CLI
+    run_scenario(lambda: CreateTaskScenario(
+        class_="3.gpu",
+        task_name="Test/smažu",
+        task_points=68
+    ))
