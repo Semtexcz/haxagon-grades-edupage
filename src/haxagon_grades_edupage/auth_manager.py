@@ -11,24 +11,36 @@ class AuthManager:
     def has_session(self) -> bool:
         return AUTH_FILE.exists()
 
-    def _is_session_valid(self) -> bool:
+    def try_open_session(self, headless=False, slow_mo=200):
+        """
+        Pokusí se otevřít browser+context se session.
+        Vrací tuple (is_valid, browser, context).
+        Pokud session neexistuje -> (False, browser, context=None).
+        """
         if not self.has_session():
-            return False
-        browser = self.playwright.firefox.launch(headless=False)
+            return False, None, None
+
+        browser = self.playwright.firefox.launch(headless=headless, slow_mo=slow_mo)
         context = browser.new_context(storage_state=str(AUTH_FILE))
         page = context.new_page()
         page.goto("https://1itg.edupage.org/user/")
+
         logged_in = "login" not in page.url
-        context.close()
-        browser.close()
-        return logged_in
+        if not logged_in:
+            context.close()
+            browser.close()
+            return False, None, None
+
+        return True, browser, context
 
     def new_context(self):
-        """Always returns a valid browser and context with session."""
-        if not self.has_session() or not self._is_session_valid():
-            # provede login a rovnou vrátí hotový browser+context
-            return setup_login(self.playwright)
-        # jinak vytvoří context ze session
-        browser = self.playwright.firefox.launch(headless=False, slow_mo=200)
-        context = browser.new_context(storage_state=str(AUTH_FILE))
-        return browser, context
+        """
+        Vrátí vždy validní (browser, context) se session.
+        Pokud není platná, spustí setup_login.
+        """
+        valid, browser, context = self.try_open_session(headless=False, slow_mo=200)
+        if valid:
+            return browser, context
+
+        # pokud session není platná, udělej login a vrať přihlášený browser+context
+        return setup_login(self.playwright)
