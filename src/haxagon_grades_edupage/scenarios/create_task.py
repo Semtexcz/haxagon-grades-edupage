@@ -11,10 +11,10 @@ class CreateTaskScenario(Scenario):
         self.task_points = task_points
 
     def run(self, page):
-        page.goto("https://1itg.edupage.org/users/", wait_until="domcontentloaded")
+        page.goto("https://1itg.edupage.org/user/", wait_until="domcontentloaded")
 
         # otevřít sekci známek
-        page.locator("#edubar").get_by_role("link", name="Známky").click()
+        page.get_by_role("link", name="Známky").click()
 
         # vybrat třídu
         page.get_by_text(self.class_).nth(1).click()
