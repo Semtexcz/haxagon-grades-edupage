@@ -4,3 +4,5 @@ auth.json
 chatgpt.txt
 
 *.pyc
+
+.idea/
