@@ -2,6 +2,9 @@ import click
 
 from src.haxagon_grades_edupage.scenario_runner import run_scenario
 from src.haxagon_grades_edupage.scenarios.base import Scenario
+from src.haxagon_grades_edupage.logging_config import setup_logging
+
+logger = setup_logging()
 
 
 class CreateTaskScenario(Scenario):
@@ -28,7 +31,7 @@ class CreateTaskScenario(Scenario):
         # uložit
         page.get_by_role("button", name="Uložit").click()
 
-        print(f"Created task '{self.task_name}' for class {self.class_} with {self.task_points} points")
+        logger.info("Created task %s for class %s with %s points", self.task_name, self.class_, self.task_points)
 
     @classmethod
     def register_cli(cls, cli_group):

@@ -1,6 +1,9 @@
 import click
 from .base import Scenario
-from scenario_runner import run_scenario
+from src.haxagon_grades_edupage.scenario_runner import run_scenario
+from src.haxagon_grades_edupage.logging_config import setup_logging
+
+logger = setup_logging()
 
 class GradesScenario(Scenario):
     def __init__(self, year: int):
@@ -10,7 +13,7 @@ class GradesScenario(Scenario):
         page.goto("https://1itg.edupage.org/user/")
         page.click("text=Známky")
         page.select_option("select#year", str(self.year))
-        print(f"Opened grades for year {self.year}")
+        logger.info("Opened grades for year %s", self.year)
 
     @classmethod
     def register_cli(cls, cli_group):

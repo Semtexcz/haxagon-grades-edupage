@@ -1,8 +1,10 @@
 import os
 from pathlib import Path
 from playwright.sync_api import Playwright, expect
+from src.haxagon_grades_edupage.logging_config import setup_logging
 
 AUTH_FILE = Path("auth.json")
+logger = setup_logging()
 
 def run(playwright: Playwright, browser=None):
     """
@@ -44,11 +46,11 @@ def run(playwright: Playwright, browser=None):
     page.get_by_role("button", name="Uložit").click()
 
     page.wait_for_url(f"{base_url}user/**")
-    print("Login proběhl úspěšně:", page.url)
+    logger.info("Login completed: %s", page.url)
 
     # uložit session
     context.storage_state(path=str(AUTH_FILE))
-    print(f"Session uložena do {AUTH_FILE}")
+    logger.info("Session saved to %s", AUTH_FILE)
 
     return browser, context
 

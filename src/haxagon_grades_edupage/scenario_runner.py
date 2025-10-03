@@ -3,6 +3,7 @@ from typing import Any, Optional
 from playwright.sync_api import FrameLocator, Locator, Page, sync_playwright
 
 from src.haxagon_grades_edupage.auth_manager import AuthManager
+from src.haxagon_grades_edupage.logging_config import setup_logging
 
 DEFAULT_WAIT_TIMEOUT = 10_000
 _AUTO_WAIT_ACTION_STATES = {
@@ -21,6 +22,7 @@ _AUTO_WAIT_ACTION_STATES = {
     "uncheck": "visible",
 }
 
+logger = setup_logging()
 
 def _wrap_result(result: Any, timeout: Optional[float]):
     if isinstance(result, Locator):
@@ -50,6 +52,7 @@ class AutoWaitLocator:
             def wrapper(*args, **kwargs):
                 state = _AUTO_WAIT_ACTION_STATES.get(item)
                 if state:
+                    logger.debug("Waiting for locator %s before %s", locator, item)
                     locator.wait_for(state=state, timeout=object.__getattribute__(self, "_timeout"))
                 result = attr(*args, **kwargs)
                 return _wrap_result(result, object.__getattribute__(self, "_timeout"))
@@ -137,7 +140,16 @@ def run_scenario(scenario_factory, *, wait_timeout: float = DEFAULT_WAIT_TIMEOUT
         page.set_default_navigation_timeout(wait_timeout)
 
         scenario = scenario_factory()
-        scenario.run(AutoWaitPage(page, wait_timeout))
+        scenario_name = scenario.__class__.__name__
+        logger.info("Running scenario %s", scenario_name)
 
-        context.close()
-        browser.close()
+        try:
+            scenario.run(AutoWaitPage(page, wait_timeout))
+        except Exception:
+            logger.exception("Scenario %s failed", scenario_name)
+            raise
+        else:
+            logger.info("Scenario %s completed", scenario_name)
+        finally:
+            context.close()
+            browser.close()
