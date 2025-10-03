@@ -95,7 +95,7 @@ class CreateTaskScenario(Scenario):
         logger.debug("Selected subject %s for class %s", self.subject, self.class_)
 
         # otevřít sekci známek
-        page.get_by_role("link", name="Známky").click()
+        page.locator("a.edubarCourseModuleLink", has_text="Známky").click()
 
         locator_configured = "TODO" not in TASK_ROW_LOCATOR
         if not locator_configured:
