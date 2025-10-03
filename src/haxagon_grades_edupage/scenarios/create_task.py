@@ -1,3 +1,8 @@
+import csv
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterable, List
+
 import click
 
 from src.haxagon_grades_edupage.scenario_runner import run_scenario
@@ -6,12 +11,74 @@ from src.haxagon_grades_edupage.logging_config import setup_logging
 
 logger = setup_logging()
 
+TASK_ROW_LOCATOR = "TODO_REPLACE_WITH_TASK_ROW_LOCATOR"
+_CSV_SAMPLE_SIZE = 2048
+
+
+@dataclass(frozen=True)
+class TaskDefinition:
+    name: str
+    points: int
+
+
+def _load_tasks_from_csv(csv_path: Path) -> List[TaskDefinition]:
+    if not csv_path.exists():
+        raise ValueError(f"CSV file {csv_path} does not exist")
+
+    logger.debug("Loading tasks from CSV %s", csv_path)
+
+    with csv_path.open("r", encoding="utf-8", newline="") as handle:
+        sample = handle.read(_CSV_SAMPLE_SIZE)
+        handle.seek(0)
+        try:
+            dialect = csv.Sniffer().sniff(sample, delimiters=",;	")
+        except (csv.Error, TypeError):
+            dialect = csv.excel
+
+        reader = csv.DictReader(handle, dialect=dialect)
+        if not reader.fieldnames:
+            raise ValueError("CSV must include a header with columns 'name' (or 'task') and 'points'")
+
+        headers = [header.strip().lower() for header in reader.fieldnames]
+        name_header = None
+        points_header = None
+        for original, header in zip(reader.fieldnames, headers):
+            if header in {"name", "task", "nazev"} and name_header is None:
+                name_header = original
+            if header in {"points", "point", "score", "body"} and points_header is None:
+                points_header = original
+
+        if not name_header or not points_header:
+            raise ValueError("CSV header must contain columns 'name' (or 'task') and 'points'")
+
+        tasks: List[TaskDefinition] = []
+        for row_index, row in enumerate(reader, start=2):
+            name_value = (row.get(name_header) or "").strip()
+            points_value = (row.get(points_header) or "").strip()
+
+            if not name_value:
+                raise ValueError(f"Row {row_index}: missing task name")
+
+            try:
+                points_int = int(points_value)
+            except ValueError as exc:
+                raise ValueError(f"Row {row_index}: invalid integer for points -> '{points_value}'") from exc
+
+            tasks.append(TaskDefinition(name=name_value, points=points_int))
+
+    if not tasks:
+        raise ValueError("CSV file did not contain any task rows")
+
+    return tasks
+
+
 class CreateTaskScenario(Scenario):
-    def __init__(self, class_: str, task_name: str, task_points: int, subject: str = "Informatika"):
+    def __init__(self, class_: str, tasks: Iterable[TaskDefinition], subject: str = "Informatika"):
         self.class_ = class_
-        self.task_name = task_name
-        self.task_points = task_points
         self.subject = subject
+        self.tasks: List[TaskDefinition] = list(tasks)
+        if not self.tasks:
+            raise ValueError("At least one task must be provided")
 
     def run(self, page):
         page.goto("https://1itg.edupage.org/user/", wait_until="domcontentloaded")
@@ -30,45 +97,113 @@ class CreateTaskScenario(Scenario):
         # otevřít sekci známek
         page.get_by_role("link", name="Známky").click()
 
+        locator_configured = "TODO" not in TASK_ROW_LOCATOR
+        if not locator_configured:
+            logger.warning("Task row locator not configured; skipping duplicate check")
 
-        existing_task = page.get_by_text(self.task_name)
+        created = 0
+        for task in self.tasks:
+            if locator_configured and not self._task_missing(page, task):
+                continue
+
+            self._create_task(page, task)
+            created += 1
+
+        logger.info(
+            "Task creation finished for class %s, subject %s (created=%s, skipped=%s)",
+            self.class_,
+            self.subject,
+            created,
+            len(self.tasks) - created,
+        )
+
+    def _task_missing(self, page, task: TaskDefinition) -> bool:
+        existing_task = page.locator(TASK_ROW_LOCATOR).filter(has_text=task.name)
         existing_count = existing_task.count()
-        logger.debug("Found %s existing tasks matching %s", existing_count, self.task_name)
+        logger.debug("Found %s existing tasks matching %s", existing_count, task.name)
         if existing_count > 0:
             logger.info(
                 "Task %s already exists for class %s and subject %s; skipping creation",
-                self.task_name,
+                task.name,
                 self.class_,
                 self.subject,
             )
-            return
+            return False
+        return True
 
+    def _create_task(self, page, task: TaskDefinition):
         # vytvořit novou písemku
         page.locator("a").filter(has_text="Nová písemka/ zkoušení").click()
-        page.locator("input[name=\"p_meno\"]").fill(self.task_name)
-        page.locator("select[name=\"kategoriaid\"]").select_option("3")
-        page.get_by_role("spinbutton").fill(str(self.task_points))
+        page.locator('input[name="p_meno"]').fill(task.name)
+        page.locator('select[name="kategoriaid"]').select_option("3")
+        page.get_by_role("spinbutton").fill(str(task.points))
 
         # uložit
         page.get_by_role("button", name="Uložit").click()
 
-        logger.info("Created task %s for class %s with %s points", self.task_name, self.class_, self.task_points)
+        logger.info(
+            "Created task %s for class %s with %s points (subject %s)",
+            task.name,
+            self.class_,
+            task.points,
+            self.subject,
+        )
 
     @classmethod
     def register_cli(cls, cli_group):
         @cli_group.command("create-task")
         @click.option("--class", "class_", required=True, help="Class name (e.g., 3.gpu)")
-        @click.option("--name", "task_name", required=True, help="Task name")
-        @click.option("--points", "task_points", type=int, required=True, help="Task points")
+        @click.option("--name", "task_name", required=False, help="Task name (use with --points)")
+        @click.option("--points", "task_points", type=int, required=False, help="Task points (use with --name)")
+        @click.option(
+            "--task",
+            "task_defs",
+            multiple=True,
+            help="Task definition in format 'name:points'. Repeat for multiple entries.",
+        )
+        @click.option(
+            "--task-csv",
+            "task_csv",
+            type=click.Path(path_type=Path, exists=True, dir_okay=False),
+            help="Path to CSV file with columns 'name' and 'points'",
+        )
         @click.option("--subject", "subject", default="Informatika", show_default=True, help="Subject name in EduPage course list")
-        def run_task(class_, task_name, task_points, subject):
+        def run_task(class_, task_name, task_points, task_defs, task_csv, subject):
             """Create a new test/task in EduPage."""
-            run_scenario(lambda: cls(class_, task_name, task_points, subject=subject))
+            tasks: List[TaskDefinition] = []
+
+            if task_csv:
+                try:
+                    tasks.extend(_load_tasks_from_csv(task_csv))
+                except ValueError as exc:
+                    raise click.BadParameter(str(exc)) from exc
+
+            if task_defs:
+                for definition in task_defs:
+                    try:
+                        name_part, points_part = definition.split(":", 1)
+                        task = TaskDefinition(name=name_part.strip(), points=int(points_part.strip()))
+                    except ValueError as exc:
+                        raise click.BadParameter(
+                            "Each --task must be in format 'name:points' with integer points."
+                        ) from exc
+                    tasks.append(task)
+
+            if not tasks:
+                if not task_name or task_points is None:
+                    raise click.BadParameter(
+                        "Provide tasks via --task-csv/--task or supply both --name and --points."
+                    )
+                tasks.append(TaskDefinition(name=task_name, points=task_points))
+
+            run_scenario(lambda: cls(class_, tasks, subject=subject))
 
 if __name__ == "__main__":
     # jednoduchý test bez CLI
     run_scenario(lambda: CreateTaskScenario(
         class_="3.gpu",
-        task_name="Test/smažu",
-        task_points=68
+        subject="Informatika",
+        tasks=[
+            TaskDefinition(name="Test/smažu", points=68),
+        ],
     ))
