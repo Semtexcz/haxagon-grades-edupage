@@ -6,6 +6,7 @@ Automatizované skripty nad EduPage postavené na Playwrightu. Projekt poskytuje
 - využívá Playwright (Firefox) pro automatizaci prohlížeče
 - CLI stojí na knihovně `click`
 - přihlášení se ukládá do `auth.json`, aby nebylo nutné se pokaždé přihlašovat
+- logování probíhá přes `loguru` (úroveň lze přepnout proměnnou `HAXAGON_LOG_LEVEL`)
 - scénáře se registrují přes `Scenario` base class a lze je snadno rozšiřovat
 
 ## Požadavky
@@ -52,7 +53,7 @@ poetry run python -m haxagon_grades_edupage.cli list
 poetry run python -m haxagon_grades_edupage.cli login
 
 # spustit scénář na vytvoření písemky
-poetry run python -m haxagon_grades_edupage.cli create-task --class "3.gpu" --name "Test" --points 50
+poetry run python -m haxagon_grades_edupage.cli create-task --class "3.gpu" --task "Test 1:50" --task "Opakování:30"
 
 # otevřít stránku se známkami pro daný školní rok
 poetry run python -m haxagon_grades_edupage.cli grades --year 2025
@@ -60,9 +61,27 @@ poetry run python -m haxagon_grades_edupage.cli grades --year 2025
 
 ### Dostupné scénáře
 - `grades` – otevře EduPage sekci se známkami a přepne na zvolený školní rok.
-- `create-task` – vytvoří novou písemku/zkoušení pro zadanou třídu, název a počet bodů.
+- `create-task` – hromadně vytvoří písemky/zkoušení pro zadanou třídu a předmět.
 
 Každý scénář je implementován ve složce `src/haxagon_grades_edupage/scenarios/` a registruje vlastní CLI příkaz přes metodu `register_cli`.
+
+#### Vytvoření písemek (`create-task`)
+
+Scénář očekává třídu (`--class`) a volitelně název předmětu (`--subject`, výchozí *Informatika*). Písemky lze předat několika způsoby:
+
+- jednotlivě přes dvojici `--name/--points`
+- hromadně na CLI pomocí opakovaného `--task "Název:Body"`
+- z CSV souboru pomocí `--task-csv path/to/tasks.csv`
+
+CSV musí mít hlavičku se sloupci `name`/`task` a `points`/`body`. Ukázka:
+
+```csv
+name,points
+Test kapitola 1,25
+Opakování,15
+```
+
+Scénář se pokusí přeskočit již existující písemky (po doplnění selektoru `TASK_ROW_LOCATOR` přímo v `create_task.py`).
 
 ## Vývoj
 - Sdílená logika pro práci se session je v `src/haxagon_grades_edupage/auth_manager.py`.
@@ -92,6 +111,3 @@ Doporučený postup vývoje:
 ├─ pyproject.toml           # konfigurace balíčku
 └─ README.md
 ```
-
----
-V případě dotazů nebo nápadů na další scénáře dejte vědět. 
