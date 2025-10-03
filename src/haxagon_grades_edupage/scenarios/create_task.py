@@ -16,11 +16,21 @@ class CreateTaskScenario(Scenario):
     def run(self, page):
         page.goto("https://1itg.edupage.org/user/", wait_until="domcontentloaded")
 
+        # vybrat třídu
+        page.locator(".edubarCourseListBtn").click()
+        locator = page.locator("div.ecourse-standards-subject-title").filter(
+            has=page.locator("div.className", has_text=self.class_)
+        ).filter(
+            has=page.locator("div.subjectName", has_text="Informatika") # TODO: Vyměnit informatika za proměnnou
+        )
+
+        locator.click()
+
         # otevřít sekci známek
         page.get_by_role("link", name="Známky").click()
 
         # vybrat třídu
-        page.get_by_text(self.class_).nth(1).click()
+        # page.get_by_text(self.class_).nth(1).click()
 
         # vytvořit novou písemku
         page.locator("a").filter(has_text="Nová písemka/ zkoušení").click()
