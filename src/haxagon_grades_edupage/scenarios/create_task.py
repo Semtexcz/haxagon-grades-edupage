@@ -6,7 +6,6 @@ from src.haxagon_grades_edupage.logging_config import setup_logging
 
 logger = setup_logging()
 
-
 class CreateTaskScenario(Scenario):
     def __init__(self, class_: str, task_name: str, task_points: int, subject: str = "Informatika"):
         self.class_ = class_
@@ -30,6 +29,19 @@ class CreateTaskScenario(Scenario):
 
         # otevřít sekci známek
         page.get_by_role("link", name="Známky").click()
+
+
+        existing_task = page.get_by_text(self.task_name)
+        existing_count = existing_task.count()
+        logger.debug("Found %s existing tasks matching %s", existing_count, self.task_name)
+        if existing_count > 0:
+            logger.info(
+                "Task %s already exists for class %s and subject %s; skipping creation",
+                self.task_name,
+                self.class_,
+                self.subject,
+            )
+            return
 
         # vytvořit novou písemku
         page.locator("a").filter(has_text="Nová písemka/ zkoušení").click()
