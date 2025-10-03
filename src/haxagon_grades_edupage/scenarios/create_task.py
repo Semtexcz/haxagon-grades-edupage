@@ -8,10 +8,11 @@ logger = setup_logging()
 
 
 class CreateTaskScenario(Scenario):
-    def __init__(self, class_: str, task_name: str, task_points: int):
+    def __init__(self, class_: str, task_name: str, task_points: int, subject: str = "Informatika"):
         self.class_ = class_
         self.task_name = task_name
         self.task_points = task_points
+        self.subject = subject
 
     def run(self, page):
         page.goto("https://1itg.edupage.org/user/", wait_until="domcontentloaded")
@@ -21,16 +22,14 @@ class CreateTaskScenario(Scenario):
         locator = page.locator("div.ecourse-standards-subject-title").filter(
             has=page.locator("div.className", has_text=self.class_)
         ).filter(
-            has=page.locator("div.subjectName", has_text="Informatika") # TODO: Vyměnit informatika za proměnnou
+            has=page.locator("div.subjectName", has_text=self.subject)
         )
 
         locator.click()
+        logger.debug("Selected subject %s for class %s", self.subject, self.class_)
 
         # otevřít sekci známek
         page.get_by_role("link", name="Známky").click()
-
-        # vybrat třídu
-        # page.get_by_text(self.class_).nth(1).click()
 
         # vytvořit novou písemku
         page.locator("a").filter(has_text="Nová písemka/ zkoušení").click()
@@ -49,9 +48,10 @@ class CreateTaskScenario(Scenario):
         @click.option("--class", "class_", required=True, help="Class name (e.g., 3.gpu)")
         @click.option("--name", "task_name", required=True, help="Task name")
         @click.option("--points", "task_points", type=int, required=True, help="Task points")
-        def run_task(class_, task_name, task_points):
+        @click.option("--subject", "subject", default="Informatika", show_default=True, help="Subject name in EduPage course list")
+        def run_task(class_, task_name, task_points, subject):
             """Create a new test/task in EduPage."""
-            run_scenario(lambda: cls(class_, task_name, task_points))
+            run_scenario(lambda: cls(class_, task_name, task_points, subject=subject))
 
 if __name__ == "__main__":
     # jednoduchý test bez CLI
