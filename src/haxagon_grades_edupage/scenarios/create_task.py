@@ -11,7 +11,7 @@ from src.haxagon_grades_edupage.logging_config import setup_logging
 
 logger = setup_logging()
 
-TASK_ROW_LOCATOR = "TODO_REPLACE_WITH_TASK_ROW_LOCATOR"
+TASK_ROW_LOCATOR = ".znamkyUdalostHeader"
 _CSV_SAMPLE_SIZE = 2048
 
 
