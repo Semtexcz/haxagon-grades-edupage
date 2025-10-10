@@ -25,6 +25,22 @@ poetry run playwright install firefox
 
 Alternativně bez Poetry: `python -m venv .venv && source .venv/bin/activate && pip install -e .` a pak `playwright install firefox`.
 
+### Instalace přes pipx z GitHubu
+Pokud chcete nástroj používat jako globální CLI bez ruční správy virtuálního prostředí, nainstalujte jej přes [pipx](https://pipx.pypa.io/):
+
+```bash
+# jednorázová instalace přímo z GitHubu
+pipx install "git+https://github.com/Semtexcz/haxagon-grades-edupage.git"
+
+# stažení Playwright prohlížeče (spustí se v pipx prostředí balíčku)
+pipx run --spec "haxagon-grades-edupage" playwright install firefox
+
+# ověření instalace
+haxagon-grades-edupage --help
+```
+
+Aktualizace na poslední verzi z repozitáře: `pipx install --force "git+https://github.com/Semtexcz/haxagon-grades-edupage.git"`.
+
 ## Konfigurace
 Před prvním přihlášením je potřeba předat přihlašovací údaje přes proměnné prostředí:
 
