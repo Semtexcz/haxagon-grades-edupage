@@ -6,3 +6,5 @@ chatgpt.txt
 *.pyc
 
 .idea/
+seznam_uloh_CPU.csv
+.coverage

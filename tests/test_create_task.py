@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.haxagon_grades_edupage.scenarios.create_task import (
+from haxagon_grades_edupage.scenarios.create_task import (
     CreateTaskScenario,
     TASK_ROW_LOCATOR,
     TaskDefinition,
@@ -191,3 +191,104 @@ def test_create_task_fills_form_and_selects_category() -> None:
 
     save_button.wait_for.assert_called_once_with(state="visible", timeout=10000)
     save_button.click.assert_called_once_with()
+
+
+def test_create_task_without_category_uses_fallback() -> None:
+    task = TaskDefinition(name="Bez kategorie", points=5)
+    scenario = CreateTaskScenario(
+        class_="3.C",
+        subject="Informatika",
+        category=None,
+        tasks=[task],
+    )
+
+    page = MagicMock()
+
+    new_task_button = MagicMock()
+    new_task_locator = MagicMock()
+    new_task_locator.filter.return_value = new_task_button
+
+    name_input = MagicMock()
+    dropdown = MagicMock()
+    spinbutton = MagicMock()
+    save_button = MagicMock()
+
+    def locator_side_effect(selector, *args, **kwargs):
+        if selector == "a":
+            return new_task_locator
+        if selector == 'input[name="p_meno"]':
+            return name_input
+        if selector == 'select[name="kategoriaid"]':
+            return dropdown
+        return MagicMock()
+
+    def get_by_role_side_effect(role, name=None, **kwargs):
+        if role == "spinbutton":
+            return spinbutton
+        if role == "button" and name == "Uložit":
+            return save_button
+        return MagicMock()
+
+    page.locator.side_effect = locator_side_effect
+    page.get_by_role.side_effect = get_by_role_side_effect
+
+    scenario._create_task(page, task)
+
+    dropdown.wait_for.assert_called_once_with(state="attached", timeout=15000)
+    dropdown.select_option.assert_not_called()
+    page.evaluate.assert_called_once()
+
+
+def test_run_creates_only_missing_tasks(monkeypatch):
+    tasks = [
+        TaskDefinition(name="Úloha 1", points=10),
+        TaskDefinition(name="Úloha 2", points=20),
+    ]
+    scenario = CreateTaskScenario(
+        class_="3.A",
+        subject="Informatika",
+        category="Dan - Linux",
+        tasks=tasks,
+    )
+
+    class DummyLocator:
+        def __init__(self):
+            self._returned_self = False
+
+        def filter(self, *args, **kwargs):
+            self._returned_self = True
+            return self
+
+        def click(self):
+            return None
+
+    class DummyPage:
+        def __init__(self):
+            self.goto_calls = []
+
+        def goto(self, url, wait_until=None):
+            self.goto_calls.append((url, wait_until))
+
+        def locator(self, *args, **kwargs):
+            return DummyLocator()
+
+    page = DummyPage()
+
+    missing_results: list[str] = []
+    created_results: list[str] = []
+    missing_iter = iter([True, False])
+
+    def fake_task_missing(unused_page, task):
+        missing_results.append(task.name)
+        return next(missing_iter)
+
+    def fake_create_task(unused_page, task):
+        created_results.append(task.name)
+
+    monkeypatch.setattr(scenario, "_task_missing", fake_task_missing)
+    monkeypatch.setattr(scenario, "_create_task", fake_create_task)
+
+    scenario.run(page)
+
+    assert missing_results == ["Úloha 1", "Úloha 2"]
+    assert created_results == ["Úloha 1"]
