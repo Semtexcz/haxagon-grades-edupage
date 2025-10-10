@@ -73,9 +73,10 @@ def _load_tasks_from_csv(csv_path: Path) -> List[TaskDefinition]:
 
 
 class CreateTaskScenario(Scenario):
-    def __init__(self, class_: str, tasks: Iterable[TaskDefinition], subject: str = "Informatika"):
+    def __init__(self, class_: str, tasks: Iterable[TaskDefinition], subject: str = "Informatika", category: str | None = None):
         self.class_ = class_
         self.subject = subject
+        self.category = category
         self.tasks: List[TaskDefinition] = list(tasks)
         if not self.tasks:
             raise ValueError("At least one task must be provided")
@@ -134,49 +135,62 @@ class CreateTaskScenario(Scenario):
     def _create_task(self, page, task: TaskDefinition):
         logger.info("Creating new task: %s", task.name)
 
-        # Klik na "Nová písemka / zkoušení"
         new_task_button = page.locator("a").filter(has_text="Nová písemka/ zkoušení")
         new_task_button.wait_for(state="visible", timeout=10000)
         new_task_button.click()
 
-        # Počkej, až se otevře modální okno a objeví se formulář
         page.wait_for_selector('input[name="p_meno"]', state="visible", timeout=15000)
         page.locator('input[name="p_meno"]').fill(task.name)
 
-        # Počkej, až bude dropdown viditelný
         dropdown = page.locator('select[name="kategoriaid"]')
-        dropdown.wait_for(state="visible", timeout=15000)
+        dropdown.wait_for(state="attached", timeout=15000)
 
-        try:
-            dropdown.select_option("3")
-        except Exception as e:
-            logger.warning("Standard select_option selhalo (%s), zkouším fallback přes JS...", e)
-            # Nouzový fallback přes JavaScript (např. pokud je element ve skrytém overlayi)
-            page.evaluate("""() => {
-                const select = document.querySelector('select[name="kategoriaid"]');
-                if (select) {
-                    select.value = "3";
-                    select.dispatchEvent(new Event('change', { bubbles: true }));
+        if self.category:
+            try:
+                logger.debug("Selecting category by label: %s", self.category)
+                dropdown.select_option(label=self.category)
+            except Exception as e:
+                logger.warning("Selecting by label failed (%s), trying JS fallback", e)
+                page.evaluate(
+                    """(labelText) => {
+                        const select = document.querySelector('select[name="kategoriaid"]');
+                        if (!select) return;
+                        const option = Array.from(select.options).find(opt => opt.text.trim() === labelText);
+                        if (option) {
+                            select.value = option.value;
+                            select.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    }""",
+                    self.category,
+                )
+        else:
+            # Pokud kategorie není zadaná, vyber první viditelnou možnost
+            logger.warning("No category specified, selecting first available option")
+            page.evaluate("""
+                () => {
+                    const select = document.querySelector('select[name="kategoriaid"]');
+                    if (select && select.options.length > 0) {
+                        select.selectedIndex = 0;
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
                 }
-            }""")
+            """)
 
-        # Počkej na spinbutton a vyplň body
         page.get_by_role("spinbutton").wait_for(state="visible", timeout=10000)
         page.get_by_role("spinbutton").fill(str(task.points))
 
-        # Klik na tlačítko Uložit
         save_button = page.get_by_role("button", name="Uložit")
         save_button.wait_for(state="visible", timeout=10000)
         save_button.click()
 
         logger.info(
-            "Created task %s for class %s with %s points (subject %s)",
+            "Created task %s for class %s with %s points (subject %s, category %s)",
             task.name,
             self.class_,
             task.points,
             self.subject,
+            self.category or "(default)",
         )
-
 
     @classmethod
     def register_cli(cls, cli_group):
@@ -197,7 +211,13 @@ class CreateTaskScenario(Scenario):
             help="Path to CSV file with columns 'name' and 'points'",
         )
         @click.option("--subject", "subject", default="Informatika", show_default=True, help="Subject name in EduPage course list")
-        def run_task(class_, task_name, task_points, task_defs, task_csv, subject):
+        @click.option(
+            "--category",
+            "category",
+            required=False,
+            help="Dropdown label for task category (e.g., 'Dan - Linux' or 'Písemka')",
+        )
+        def run_task(class_, task_name, task_points, task_defs, task_csv, subject, category):
             """Create a new test/task in EduPage."""
             tasks: List[TaskDefinition] = []
 
@@ -225,12 +245,12 @@ class CreateTaskScenario(Scenario):
                     )
                 tasks.append(TaskDefinition(name=task_name, points=task_points))
 
-            run_scenario(lambda: cls(class_, tasks, subject=subject))
+            run_scenario(lambda: cls(class_, tasks, subject=subject, category=category))
 
 if __name__ == "__main__":
     # jednoduchý test bez CLI
     run_scenario(lambda: CreateTaskScenario(
-        class_="3.gpu",
+        class_="3.cpu",
         subject="Informatika",
         tasks=[
             TaskDefinition(name="Test/smažu", points=68),
