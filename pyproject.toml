@@ -13,9 +13,14 @@ dependencies = [
     "loguru (>=0.7.0,<1.0.0)"
 ]
 
+[project.scripts]
+haxagon-grades-edupage = "haxagon_grades_edupage.cli:cli"
+
 [tool.poetry]
 packages = [{include = "haxagon_grades_edupage", from = "src"}]
 
+[tool.poetry.scripts]
+haxagon-grades-edupage = "haxagon_grades_edupage.cli:cli"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
