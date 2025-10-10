@@ -255,4 +255,5 @@ if __name__ == "__main__":
         tasks=[
             TaskDefinition(name="Test/smažu", points=68),
         ],
+        category="Dan - Linux",
     ))
