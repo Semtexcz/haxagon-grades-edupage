@@ -92,7 +92,7 @@ class CreateTaskScenario(Scenario):
         )
 
         locator.click()
-        logger.debug("Selected subject %s for class %s", self.subject, self.class_)
+        logger.debug(f"Selected subject {self.subject} for class {self.class_}")
 
         # otevřít sekci známek
         page.locator("a.edubarCourseModuleLink", has_text="Známky").click()
@@ -131,23 +131,52 @@ class CreateTaskScenario(Scenario):
             return False
         return True
 
-    def _create_task(self, page, task: TaskDefinition):
-        # vytvořit novou písemku
-        page.locator("a").filter(has_text="Nová písemka/ zkoušení").click()
-        page.locator('input[name="p_meno"]').fill(task.name)
-        page.locator('select[name="kategoriaid"]').select_option("3")
-        page.get_by_role("spinbutton").fill(str(task.points))
+def _create_task(self, page, task: TaskDefinition):
+    logger.info("Creating new task: %s", task.name)
 
-        # uložit
-        page.get_by_role("button", name="Uložit").click()
+    # Klik na "Nová písemka / zkoušení"
+    new_task_button = page.locator("a").filter(has_text="Nová písemka/ zkoušení")
+    new_task_button.wait_for(state="visible", timeout=10000)
+    new_task_button.click()
 
-        logger.info(
-            "Created task %s for class %s with %s points (subject %s)",
-            task.name,
-            self.class_,
-            task.points,
-            self.subject,
-        )
+    # Počkej, až se otevře modální okno a objeví se formulář
+    page.wait_for_selector('input[name="p_meno"]', state="visible", timeout=15000)
+    page.locator('input[name="p_meno"]').fill(task.name)
+
+    # Počkej, až bude dropdown viditelný
+    dropdown = page.locator('select[name="kategoriaid"]')
+    dropdown.wait_for(state="visible", timeout=15000)
+
+    try:
+        dropdown.select_option("3")
+    except Exception as e:
+        logger.warning("Standard select_option selhalo (%s), zkouším fallback přes JS...", e)
+        # Nouzový fallback přes JavaScript (např. pokud je element ve skrytém overlayi)
+        page.evaluate("""() => {
+            const select = document.querySelector('select[name="kategoriaid"]');
+            if (select) {
+                select.value = "3";
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }""")
+
+    # Počkej na spinbutton a vyplň body
+    page.get_by_role("spinbutton").wait_for(state="visible", timeout=10000)
+    page.get_by_role("spinbutton").fill(str(task.points))
+
+    # Klik na tlačítko Uložit
+    save_button = page.get_by_role("button", name="Uložit")
+    save_button.wait_for(state="visible", timeout=10000)
+    save_button.click()
+
+    logger.info(
+        "Created task %s for class %s with %s points (subject %s)",
+        task.name,
+        self.class_,
+        task.points,
+        self.subject,
+    )
+
 
     @classmethod
     def register_cli(cls, cli_group):
