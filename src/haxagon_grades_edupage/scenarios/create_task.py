@@ -5,9 +5,9 @@ from typing import Iterable, List
 
 import click
 
-from src.haxagon_grades_edupage.scenario_runner import run_scenario
-from src.haxagon_grades_edupage.scenarios.base import Scenario
-from src.haxagon_grades_edupage.logging_config import setup_logging
+from haxagon_grades_edupage.scenario_runner import run_scenario
+from haxagon_grades_edupage.scenarios.base import Scenario
+from haxagon_grades_edupage.logging_config import setup_logging
 
 logger = setup_logging()
 

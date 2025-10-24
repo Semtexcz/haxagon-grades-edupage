@@ -2,8 +2,8 @@ from typing import Any, Optional
 
 from playwright.sync_api import FrameLocator, Locator, Page, sync_playwright
 
-from src.haxagon_grades_edupage.auth_manager import AuthManager
-from src.haxagon_grades_edupage.logging_config import setup_logging
+from haxagon_grades_edupage.auth_manager import AuthManager
+from haxagon_grades_edupage.logging_config import setup_logging
 
 DEFAULT_WAIT_TIMEOUT = 10_000
 _AUTO_WAIT_ACTION_STATES = {

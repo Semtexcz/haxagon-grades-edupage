@@ -1,7 +1,7 @@
 from pathlib import Path
 from playwright.sync_api import Playwright
-from src.haxagon_grades_edupage.setup_login import run as setup_login
-from src.haxagon_grades_edupage.logging_config import setup_logging
+from haxagon_grades_edupage.setup_login import run as setup_login
+from haxagon_grades_edupage.logging_config import setup_logging
 
 AUTH_FILE = Path("auth.json")
 logger = setup_logging()
