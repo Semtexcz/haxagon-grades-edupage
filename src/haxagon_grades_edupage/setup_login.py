@@ -3,6 +3,8 @@ from pathlib import Path
 from playwright.sync_api import Playwright, expect
 from haxagon_grades_edupage.logging_config import setup_logging
 
+from getpass import getpass
+
 AUTH_FILE = Path("auth.json")
 logger = setup_logging()
 
@@ -14,6 +16,12 @@ def run(playwright: Playwright, browser=None):
     base_url = os.environ.get("EDUPAGE_URL", "https://1itg.edupage.org/")
     username_value = os.environ.get("EDUPAGE_USERNAME")
     password_value = os.environ.get("EDUPAGE_PASSWORD")
+
+    if not username_value or not password_value:
+        username_value = input("Login: ")
+        password_value = getpass("Password: ")
+        os.environ["EDUPAGE_USERNAME"] = username_value
+        os.environ["EDUPAGE_PASSWORD"] = password_value
 
     if not username_value or not password_value:
         raise RuntimeError("Chybí EDUPAGE_USERNAME a EDUPAGE_PASSWORD v prostředí")
