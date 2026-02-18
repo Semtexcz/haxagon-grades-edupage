@@ -1,10 +1,10 @@
 import click
 from playwright.sync_api import sync_playwright
 
-from haxagon_grades_edupage import setup_login
-from haxagon_grades_edupage.logging_config import setup_logging
+from edu_page_automat import setup_login
+from edu_page_automat.logging_config import setup_logging
 # import všech scénářů
-from haxagon_grades_edupage.scenarios.create_task import CreateTaskScenario
+from edu_page_automat.scenarios.create_task import CreateTaskScenario
 
 logger = setup_logging()
 SCENARIOS = [CreateTaskScenario]

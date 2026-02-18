@@ -1,7 +1,7 @@
 from click.testing import CliRunner
 
-from haxagon_grades_edupage.cli import cli as main_cli
-from haxagon_grades_edupage.scenarios import create_task as create_task_module
+from edu_page_automat.cli import cli as main_cli
+from edu_page_automat.scenarios import create_task as create_task_module
 
 
 def test_cli_list_outputs_available_commands():

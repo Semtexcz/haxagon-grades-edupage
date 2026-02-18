@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from playwright.sync_api import Playwright, expect
-from haxagon_grades_edupage.logging_config import setup_logging
+from edu_page_automat.logging_config import setup_logging
 
 from getpass import getpass
 

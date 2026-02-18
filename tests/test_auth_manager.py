@@ -2,8 +2,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from haxagon_grades_edupage import auth_manager as auth_module
-from haxagon_grades_edupage.auth_manager import AuthManager
+from edu_page_automat import auth_manager as auth_module
+from edu_page_automat.auth_manager import AuthManager
 
 
 class DummyPage:

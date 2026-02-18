@@ -1,5 +1,5 @@
 [project]
-name = "haxagon-grades-edupage"
+name = "EduPageAutomat"
 version = "0.3.0"
 description = ""
 authors = [
@@ -18,13 +18,13 @@ pytest = "^8.4.2"
 pytest-cov = "^7.0.0"
 
 [project.scripts]
-haxagon-grades-edupage = "haxagon_grades_edupage.cli:cli"
+edupage = "edu_page_automat.cli:cli"
 
 [tool.poetry]
-packages = [{include = "haxagon_grades_edupage", from = "src"}]
+packages = [{include = "edu_page_automat", from = "src"}]
 
 [tool.poetry.scripts]
-haxagon-grades-edupage = "haxagon_grades_edupage.cli:cli"
+edupage = "edu_page_automat.cli:cli"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

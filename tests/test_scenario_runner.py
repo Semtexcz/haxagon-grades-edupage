@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from haxagon_grades_edupage import scenario_runner as sr
+from edu_page_automat import scenario_runner as sr
 
 
 class DummyLocator:

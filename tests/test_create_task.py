@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from haxagon_grades_edupage.scenarios.create_task import (
+from edu_page_automat.scenarios.create_task import (
     CreateTaskScenario,
     TASK_ROW_LOCATOR,
     TaskDefinition,
