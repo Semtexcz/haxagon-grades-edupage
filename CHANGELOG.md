@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here.
 
+## 0.8.0 - 2026-05-22
+
+### Added
+
+- Added `convert-classroom-grades` for offline Google Classroom grade CSV conversion into `fill-grades` input.
+- Documented the Google Classroom grade conversion flow and CLI filters.
+
+### Changed
+
+- Made `fill-grades` skip CSV rows with empty point values before browser automation starts.
+
 ## 0.7.0 - 2026-05-22
 
 ### Added

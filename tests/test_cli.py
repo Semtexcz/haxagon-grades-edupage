@@ -1,5 +1,6 @@
 from click.testing import CliRunner
 
+from edu_page_automat import cli as cli_module
 from edu_page_automat.cli import cli as main_cli
 from edu_page_automat.scenarios import create_task as create_task_module
 from edu_page_automat.scenarios import export_grades as export_grades_module
@@ -138,3 +139,49 @@ def test_cli_export_grades_invokes_run_scenario(monkeypatch, tmp_path):
     assert scenario.class_ == "2.png"
     assert scenario.subject == "Informatika"
     assert scenario.output_csv == output_csv
+
+
+def test_cli_convert_classroom_grades_invokes_converter(monkeypatch, tmp_path):
+    """The Classroom conversion command runs outside the Playwright scenario registry."""
+    runner = CliRunner()
+    captured = {}
+    input_csv = tmp_path / "classroom.csv"
+    output_csv = tmp_path / "edupage.csv"
+    input_csv.write_text("Student,Task,Topic,Points earned\nAda Lovelace,Task,Topic,42\n", encoding="utf-8")
+
+    def fake_convert_classroom_grades_csv(input_path, output_path, *, topics, tasks):
+        captured["input_path"] = input_path
+        captured["output_path"] = output_path
+        captured["topics"] = topics
+        captured["tasks"] = tasks
+        return 1
+
+    monkeypatch.setattr(
+        cli_module,
+        "convert_classroom_grades_csv",
+        fake_convert_classroom_grades_csv,
+    )
+
+    result = runner.invoke(
+        main_cli,
+        [
+            "convert-classroom-grades",
+            "--input-csv",
+            str(input_csv),
+            "--output-csv",
+            str(output_csv),
+            "--topic",
+            "JavaScript – Certifications",
+            "--task",
+            "Task",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert captured == {
+        "input_path": input_csv,
+        "output_path": output_csv,
+        "topics": ("JavaScript – Certifications",),
+        "tasks": ("Task",),
+    }
+    assert f"Wrote 1 grade rows to {output_csv}" in result.output

@@ -102,6 +102,9 @@ def _load_grade_entries_from_csv(csv_path: Path) -> List[GradeEntry]:
                 raise ValueError(f"Row {row_index}: missing last name")
             if not task_name:
                 raise ValueError(f"Row {row_index}: missing task name")
+            if not points_value:
+                logger.debug("Skipping row %s without points", row_index)
+                continue
 
             points = _parse_grade_value(points_value, row_index)
 

@@ -100,6 +100,29 @@ class TestLoadGradeEntriesFromCsv:
             )
         ]
 
+    def test_skips_rows_with_empty_points(self, tmp_path: Path) -> None:
+        """Review CSV files may include unfinished grade rows without filling them."""
+        csv_path = tmp_path / "partial.csv"
+        write_csv(
+            csv_path,
+            [
+                "jmeno,prijmeni,jmeno_ulohy,pocet_bodu",
+                "Žofie,Žužlavá,Task,",
+                "Ada,Lovelace,Task,42",
+            ],
+        )
+
+        entries = _load_grade_entries_from_csv(csv_path)
+
+        assert entries == [
+            GradeEntry(
+                first_name="Ada",
+                last_name="Lovelace",
+                task_name="Task",
+                points=42,
+            )
+        ]
+
 
 def test_parse_grade_value_accepts_uppercase_m() -> None:
     """The m marker is normalized to lowercase before filling."""
