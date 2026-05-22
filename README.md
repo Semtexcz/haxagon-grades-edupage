@@ -110,7 +110,7 @@ poetry run edupage diff-grades \
   --output-csv data/jpg_grades_diff.csv
 ```
 
-The diff output can be used with `fill-grades --overwrite-existing`. Empty source-of-truth grades and rows missing from the current EduPage export are reported in the command summary for manual review.
+The diff output can be used with `fill-grades --overwrite-existing`. `--truth-csv` accepts either an EduPage-style grade CSV or a raw Google Classroom export. Empty raw Google Classroom point values are treated as `m`; empty EduPage-style source-of-truth grades and rows missing from the current EduPage export are reported in the command summary for manual review.
 
 ## Development
 

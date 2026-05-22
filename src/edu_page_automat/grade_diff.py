@@ -57,11 +57,24 @@ def _find_header(fieldnames: Sequence[str], accepted_names: set[str], label: str
     raise ValueError(f"CSV header must contain a column for {label}")
 
 
-def _normalize_points(points: str, row_index: int) -> str:
+def _has_header(fieldnames: Sequence[str], accepted_names: set[str]) -> bool:
+    """Return whether fieldnames include one of the accepted normalized names."""
+    return any(_normalize_header(fieldname) in accepted_names for fieldname in fieldnames)
+
+
+def _split_student_name(student_name: str, row_index: int) -> tuple[str, str]:
+    """Split a Google Classroom student display name into first and last name."""
+    name_parts = student_name.split()
+    if len(name_parts) < 2:
+        raise ValueError(f"Row {row_index}: student name must contain first and last name")
+    return name_parts[0], " ".join(name_parts[1:])
+
+
+def _normalize_points(points: str, row_index: int, *, empty_value: str = "") -> str:
     """Normalize a grade value supported by `fill-grades`."""
     normalized_points = points.strip()
     if not normalized_points:
-        return ""
+        return empty_value
     if normalized_points.casefold() == "m":
         return "m"
     if normalized_points.isdecimal():
@@ -80,8 +93,78 @@ def _csv_reader(handle: TextIO) -> csv.DictReader:
     return csv.DictReader(handle, dialect=dialect)
 
 
-def _load_grade_rows(csv_path: Path) -> list[GradeRow]:
+def _validate_unique_row(grade_row: GradeRow, row_index: int, seen_keys: set[tuple[str, str, str]]) -> None:
+    """Validate a normalized grade row and update the duplicate guard."""
+    if not grade_row.first_name:
+        raise ValueError(f"Row {row_index}: missing first name")
+    if not grade_row.last_name:
+        raise ValueError(f"Row {row_index}: missing last name")
+    if not grade_row.task_name:
+        raise ValueError(f"Row {row_index}: missing task name")
+    if grade_row.key in seen_keys:
+        raise ValueError(
+            f"Row {row_index}: duplicate grade for {grade_row.first_name} "
+            f"{grade_row.last_name} in task {grade_row.task_name}"
+        )
+    seen_keys.add(grade_row.key)
+
+
+def _load_classroom_grade_rows(reader: csv.DictReader) -> list[GradeRow]:
+    """Load normalized grade rows from a raw Google Classroom export."""
+    if not reader.fieldnames:
+        raise ValueError("CSV must include a header")
+
+    student_header = _find_header(reader.fieldnames, {"student"}, "student name")
+    task_name_header = _find_header(reader.fieldnames, {"task"}, "task name")
+    points_header = _find_header(reader.fieldnames, {"points_earned", "points"}, "points earned")
+
+    rows: list[GradeRow] = []
+    seen_keys: set[tuple[str, str, str]] = set()
+    for row_index, row in enumerate(reader, start=2):
+        first_name, last_name = _split_student_name((row.get(student_header) or "").strip(), row_index)
+        grade_row = GradeRow(
+            first_name=first_name,
+            last_name=last_name,
+            task_name=(row.get(task_name_header) or "").strip(),
+            points=_normalize_points(row.get(points_header) or "", row_index, empty_value="m"),
+        )
+        _validate_unique_row(grade_row, row_index, seen_keys)
+        rows.append(grade_row)
+
+    return rows
+
+
+def _load_edupage_grade_rows(reader: csv.DictReader) -> list[GradeRow]:
     """Load normalized grade rows from a Czech or English EduPage-style CSV."""
+    if not reader.fieldnames:
+        raise ValueError("CSV must include a header")
+
+    first_name_header = _find_header(reader.fieldnames, {"first_name", "jmeno", "name"}, "first name")
+    last_name_header = _find_header(reader.fieldnames, {"last_name", "prijmeni", "surname"}, "last name")
+    task_name_header = _find_header(
+        reader.fieldnames,
+        {"task_name", "task", "uloha", "jmeno_ulohy", "nazev_ulohy"},
+        "task name",
+    )
+    points_header = _find_header(reader.fieldnames, {"points", "point", "score", "body", "pocet_bodu"}, "points")
+
+    rows: list[GradeRow] = []
+    seen_keys: set[tuple[str, str, str]] = set()
+    for row_index, row in enumerate(reader, start=2):
+        grade_row = GradeRow(
+            first_name=(row.get(first_name_header) or "").strip(),
+            last_name=(row.get(last_name_header) or "").strip(),
+            task_name=(row.get(task_name_header) or "").strip(),
+            points=_normalize_points(row.get(points_header) or "", row_index),
+        )
+        _validate_unique_row(grade_row, row_index, seen_keys)
+        rows.append(grade_row)
+
+    return rows
+
+
+def _load_grade_rows(csv_path: Path) -> list[GradeRow]:
+    """Load normalized grade rows from an EduPage-style or Google Classroom CSV."""
     if not csv_path.exists():
         raise ValueError(f"CSV file {csv_path} does not exist")
 
@@ -90,37 +173,10 @@ def _load_grade_rows(csv_path: Path) -> list[GradeRow]:
         if not reader.fieldnames:
             raise ValueError("CSV must include a header")
 
-        first_name_header = _find_header(reader.fieldnames, {"first_name", "jmeno", "name"}, "first name")
-        last_name_header = _find_header(reader.fieldnames, {"last_name", "prijmeni", "surname"}, "last name")
-        task_name_header = _find_header(
-            reader.fieldnames,
-            {"task_name", "task", "uloha", "jmeno_ulohy", "nazev_ulohy"},
-            "task name",
-        )
-        points_header = _find_header(reader.fieldnames, {"points", "point", "score", "body", "pocet_bodu"}, "points")
-
-        rows: list[GradeRow] = []
-        seen_keys: set[tuple[str, str, str]] = set()
-        for row_index, row in enumerate(reader, start=2):
-            grade_row = GradeRow(
-                first_name=(row.get(first_name_header) or "").strip(),
-                last_name=(row.get(last_name_header) or "").strip(),
-                task_name=(row.get(task_name_header) or "").strip(),
-                points=_normalize_points(row.get(points_header) or "", row_index),
-            )
-            if not grade_row.first_name:
-                raise ValueError(f"Row {row_index}: missing first name")
-            if not grade_row.last_name:
-                raise ValueError(f"Row {row_index}: missing last name")
-            if not grade_row.task_name:
-                raise ValueError(f"Row {row_index}: missing task name")
-            if grade_row.key in seen_keys:
-                raise ValueError(
-                    f"Row {row_index}: duplicate grade for {grade_row.first_name} "
-                    f"{grade_row.last_name} in task {grade_row.task_name}"
-                )
-            seen_keys.add(grade_row.key)
-            rows.append(grade_row)
+        if _has_header(reader.fieldnames, {"student"}):
+            rows = _load_classroom_grade_rows(reader)
+        else:
+            rows = _load_edupage_grade_rows(reader)
 
     if not rows:
         raise ValueError("CSV file did not contain any grade rows")
@@ -131,9 +187,9 @@ def _load_grade_rows(csv_path: Path) -> list[GradeRow]:
 def write_grade_diff_csv(current_csv: Path, truth_csv: Path, output_csv: Path) -> GradeDiffSummary:
     """Write rows whose truth grade should be saved to EduPage.
 
-    The generated CSV contains only rows present in both files where the truth
-    value is non-empty and differs from the current EduPage value. Empty truth
-    values are not written because `fill-grades` intentionally skips them.
+    The generated CSV contains only rows present in both files where the source
+    value is non-empty and differs from the current EduPage value. Source files
+    may use EduPage-style grade headers or raw Google Classroom export headers.
     """
     current_rows = _load_grade_rows(current_csv)
     truth_rows = _load_grade_rows(truth_csv)

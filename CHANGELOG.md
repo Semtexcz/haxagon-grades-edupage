@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## 0.9.4 - 2026-05-22
+
+### Fixed
+
+- Allowed `diff-grades --truth-csv` to read raw Google Classroom exports directly.
+
 ## 0.9.3 - 2026-05-22
 
 ### Changed

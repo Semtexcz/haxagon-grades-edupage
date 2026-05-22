@@ -71,9 +71,9 @@ The converter writes empty `Points earned` values as the EduPage `m` marker. Who
 
 ## Grade Diff Flow
 
-The `diff-grades` CLI command runs offline and does not use the scenario runner or Playwright. It compares a current EduPage grade export with a source-of-truth grade CSV by first name, last name, and task name, then writes only rows where the source-of-truth value is non-empty and differs from the current EduPage value.
+The `diff-grades` CLI command runs offline and does not use the scenario runner or Playwright. It compares a current EduPage grade export with a source-of-truth grade CSV by first name, last name, and task name, then writes only rows where the source-of-truth value is non-empty and differs from the current EduPage value. The source-of-truth CSV may already use EduPage-style grade headers, or it may be a raw Google Classroom export with `Student`, `Task`, and `Points earned` columns.
 
-The generated diff uses the `fill-grades` Czech headers `jmeno`, `prijmeni`, `jmeno_ulohy`, and `pocet_bodu`. Empty source-of-truth values are reported in the CLI summary but not written because `fill-grades` deliberately skips empty grades and cannot clear an existing EduPage value. Rows that are missing from the current EduPage export are also reported instead of written, because they usually indicate a visibility, task, or name-matching problem that should be reviewed before browser automation.
+The generated diff uses the `fill-grades` Czech headers `jmeno`, `prijmeni`, `jmeno_ulohy`, and `pocet_bodu`. Empty raw Google Classroom source values are normalized to the EduPage `m` marker. Empty EduPage-style source-of-truth values are reported in the CLI summary but not written because `fill-grades` deliberately skips empty grades and cannot clear an existing EduPage value. Rows that are missing from the current EduPage export are also reported instead of written, because they usually indicate a visibility, task, or name-matching problem that should be reviewed before browser automation.
 
 ## Test Strategy Boundary
 

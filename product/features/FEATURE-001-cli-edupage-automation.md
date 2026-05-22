@@ -58,6 +58,6 @@ Empty Google Classroom point values are emitted as the EduPage `m` marker.
 
 ## Grade Diff
 
-The `diff-grades` command compares the current EduPage CSV export with a source-of-truth grade CSV and writes only non-empty changed target values in the `fill-grades` input format.
+The `diff-grades` command compares the current EduPage CSV export with a source-of-truth grade CSV and writes only non-empty changed target values in the `fill-grades` input format. The source-of-truth file can be either an EduPage-style grade CSV or a raw Google Classroom export.
 
-Rows with empty source-of-truth points are counted but not emitted because they cannot be represented as a fill operation. Rows missing from the current EduPage export are counted as review items instead of being emitted.
+Rows with empty EduPage-style source-of-truth points are counted but not emitted because they cannot be represented as a fill operation. Empty raw Google Classroom point values are emitted as `m`. Rows missing from the current EduPage export are counted as review items instead of being emitted.
