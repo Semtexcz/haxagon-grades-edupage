@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## 0.7.0 - 2026-05-22
+
+### Added
+
+- Added `task_category` to `export-grades` CSV output from EduPage task headers.
+
 ## 0.6.0 - 2026-05-22
 
 ### Added

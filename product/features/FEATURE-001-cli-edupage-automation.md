@@ -33,6 +33,6 @@ By default, `fill-grades` refuses to replace non-empty grade cells. Use `--overw
 
 ## CSV Grade Export
 
-The `export-grades` command writes a CSV with `first_name`, `last_name`, `task_name`, and `points` columns. It exports all visible student/task cells from the selected class and subject grade table, including empty cells with an empty `points` value.
+The `export-grades` command writes a CSV with `first_name`, `last_name`, `task_category`, `task_name`, and `points` columns. It exports all visible student/task cells from the selected class and subject grade table, including empty cells with an empty `points` value.
 
-The exported CSV uses headers compatible with `fill-grades`, so it can be reviewed, edited, and used later as grade input.
+The exported CSV keeps task categories from EduPage headers such as `Dan - Frontend`. The remaining required headers are compatible with `fill-grades`, so the file can be reviewed, edited, and used later as grade input.

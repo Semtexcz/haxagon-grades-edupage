@@ -16,7 +16,7 @@ logger = setup_logging()
 _GRADE_PAGE_URL = "https://1itg.edupage.org/user/"
 _TASK_HEADER_LOCATOR = ".znamkyUdalostHeader"
 _STUDENT_LINK_SELECTOR = 'a[href*="studentid="]'
-_CSV_HEADERS = ["first_name", "last_name", "task_name", "points"]
+_CSV_HEADERS = ["first_name", "last_name", "task_category", "task_name", "points"]
 
 
 @dataclass(frozen=True)
@@ -25,6 +25,7 @@ class GradeExportRow:
 
     first_name: str
     last_name: str
+    task_category: str
     task_name: str
     points: str
 
@@ -47,6 +48,7 @@ def _write_grade_rows_to_csv(csv_path: Path, rows: list[GradeExportRow]) -> None
                 {
                     "first_name": row.first_name,
                     "last_name": row.last_name,
+                    "task_category": row.task_category,
                     "task_name": row.task_name,
                     "points": row.points,
                 }
@@ -115,6 +117,7 @@ class ExportGradesScenario(Scenario):
                 const tasks = Array.from(document.querySelectorAll(".znamkyUdalostHeader"))
                     .map((header) => ({
                         name: normalize(header.querySelector(".znHeaderUdalost")?.textContent || ""),
+                        category: normalize(header.querySelector(".znHeaderKategoria")?.textContent || ""),
                         subjectId: header.getAttribute("data-pid"),
                         taskUid: header.getAttribute("data-uid"),
                     }))
@@ -140,6 +143,7 @@ class ExportGradesScenario(Scenario):
 
                         rows.push({
                             studentName,
+                            taskCategory: task.category,
                             taskName: task.name,
                             points: gradeValueFromCell(gradeCell),
                         });
@@ -157,6 +161,7 @@ class ExportGradesScenario(Scenario):
                 GradeExportRow(
                     first_name=first_name,
                     last_name=last_name,
+                    task_category=raw_row["taskCategory"],
                     task_name=raw_row["taskName"],
                     points=raw_row["points"],
                 )

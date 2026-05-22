@@ -8,6 +8,7 @@ Completed tasks:
 
 1. `TASK-001-clean-project-fixtures-and-docs`
 2. `TASK-002-export-grades-to-csv`
+3. `TASK-003-export-grade-categories`
 
 ## Dependencies
 
