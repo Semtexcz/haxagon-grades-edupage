@@ -252,7 +252,7 @@ def test_fill_grade_entry_overwrites_existing_grade(monkeypatch) -> None:
 
 
 def test_overwrite_grade_value_updates_hidden_field() -> None:
-    """Existing grade overwrites update the hidden field through page JavaScript."""
+    """Existing grade overwrites use the visible EduPage editor input."""
     scenario = FillGradesScenario(
         class_="2.png",
         entries=[GradeEntry("Žofie", "Žužlavá", "Task", 80)],
@@ -260,11 +260,36 @@ def test_overwrite_grade_value_updates_hidden_field() -> None:
         overwrite_existing=True,
     )
     page = MagicMock()
+    grade_input = MagicMock()
+    page.locator.return_value = grade_input
+    page.evaluate.return_value = {"stored": "90", "editor": "80"}
 
     scenario._overwrite_grade_value(page, "zn_-440_-91_132810_P2_1", 80)
 
+    page.locator.assert_called_once_with('input[name="nzn_-440_-91_132810_P2_1"]')
+    grade_input.wait_for.assert_called_once_with(state="attached", timeout=10000)
+    grade_input.click.assert_called_once_with()
+    grade_input.fill.assert_called_once_with("80")
     _, payload = page.evaluate.call_args.args
-    assert payload == {"inputName": "zn_-440_-91_132810_P2_1", "value": "80"}
+    assert payload == {
+        "storedInputName": "zn_-440_-91_132810_P2_1",
+        "editorInputName": "nzn_-440_-91_132810_P2_1",
+    }
+
+
+def test_overwrite_grade_value_requires_editor_to_keep_value() -> None:
+    """Overwrite mode fails when the EduPage editor rejects the new value."""
+    scenario = FillGradesScenario(
+        class_="2.png",
+        entries=[GradeEntry("Žofie", "Žužlavá", "Task", 80)],
+        subject="Informatika",
+        overwrite_existing=True,
+    )
+    page = MagicMock()
+    page.evaluate.return_value = {"stored": "90", "editor": "90"}
+
+    with pytest.raises(ValueError, match="did not keep overwritten value"):
+        scenario._overwrite_grade_value(page, "zn_-440_-91_132810_P2_1", 80)
 
 
 def test_run_fills_entries_and_saves(monkeypatch) -> None:
@@ -277,6 +302,9 @@ def test_run_fills_entries_and_saves(monkeypatch) -> None:
     page = MagicMock()
     grades_link = MagicMock()
     save_button = MagicMock()
+    confirm_group = MagicMock()
+    confirm_button = MagicMock()
+    confirm_group.first = confirm_button
     filled: list[str] = []
 
     def locator_side_effect(selector, *args, **kwargs):
@@ -287,6 +315,7 @@ def test_run_fills_entries_and_saves(monkeypatch) -> None:
         return MagicMock()
 
     page.locator.side_effect = locator_side_effect
+    page.get_by_role.return_value = confirm_group
     monkeypatch.setattr(scenario, "_select_course", lambda unused_page: None)
     monkeypatch.setattr(scenario, "_fill_grade_entry", lambda unused_page, entry: filled.append(entry.task_name))
 
@@ -297,3 +326,6 @@ def test_run_fills_entries_and_saves(monkeypatch) -> None:
     page.wait_for_selector.assert_called_once_with(".znamkyUdalostHeader", state="attached", timeout=15000)
     save_button.wait_for.assert_called_once_with(state="visible", timeout=10000)
     save_button.click.assert_called_once_with()
+    page.get_by_role.assert_called_once_with("button", name="Uložit")
+    confirm_button.wait_for.assert_called_once_with(state="visible", timeout=3000)
+    confirm_button.click.assert_called_once_with()

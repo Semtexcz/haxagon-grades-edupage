@@ -75,7 +75,7 @@ class ExportGradesScenario(Scenario):
         _write_grade_rows_to_csv(self.output_csv, rows)
 
         logger.info(
-            "Grade export finished for class %s, subject %s (rows=%s, output=%s)",
+            "Grade export finished for class {}, subject {} (rows={}, output={})",
             self.class_,
             self.subject,
             len(rows),
@@ -91,7 +91,7 @@ class ExportGradesScenario(Scenario):
             has=page.locator("div.subjectName", has_text=self.subject)
         )
         course.click()
-        logger.debug("Selected subject %s for class %s", self.subject, self.class_)
+        logger.debug("Selected subject {} for class {}", self.subject, self.class_)
 
     def _extract_grade_rows(self, page) -> List[GradeExportRow]:
         """Read all visible student/task grade cells from the EduPage grade table."""

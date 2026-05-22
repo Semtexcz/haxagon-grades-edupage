@@ -46,7 +46,7 @@ Scenario code should accept already-authenticated Playwright pages from `scenari
 
 Rows without a grade value are ignored before browser automation starts. This allows review/export CSV files to include unfinished students without requiring manual cleanup before import.
 
-Existing grade values are protected by default. With `--overwrite-existing`, the scenario updates the existing hidden `zn_{student_id}_{subject_id}_{task_uid}_{period}_1` field and dispatches DOM events so EduPage can include the replacement in the save operation.
+Existing grade values are protected by default. With `--overwrite-existing`, the scenario opens the existing cell editor through the matching `nzn_{student_id}_{subject_id}_{task_uid}_{period}_1` input and fills the replacement value through the visible EduPage editor. Saving clicks the ribbon save action and confirms the EduPage save dialog when it appears.
 
 The scenario assumes tasks already exist in EduPage. Task creation remains the responsibility of `CreateTaskScenario`.
 

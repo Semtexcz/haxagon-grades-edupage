@@ -66,7 +66,7 @@ def _load_grade_entries_from_csv(csv_path: Path) -> List[GradeEntry]:
     if not csv_path.exists():
         raise ValueError(f"CSV file {csv_path} does not exist")
 
-    logger.debug("Loading grades from CSV %s", csv_path)
+    logger.debug("Loading grades from CSV {}", csv_path)
 
     with csv_path.open("r", encoding="utf-8", newline="") as handle:
         sample = handle.read(_CSV_SAMPLE_SIZE)
@@ -103,7 +103,7 @@ def _load_grade_entries_from_csv(csv_path: Path) -> List[GradeEntry]:
             if not task_name:
                 raise ValueError(f"Row {row_index}: missing task name")
             if not points_value:
-                logger.debug("Skipping row %s without points", row_index)
+                logger.debug("Skipping row {} without points", row_index)
                 continue
 
             points = _parse_grade_value(points_value, row_index)
@@ -158,12 +158,10 @@ class FillGradesScenario(Scenario):
             filled += 1
 
         if self.save:
-            save_button = page.locator(_SAVE_BUTTON_LOCATOR)
-            save_button.wait_for(state="visible", timeout=10000)
-            save_button.click()
+            self._save_changes(page)
 
         logger.info(
-            "Grade fill finished for class %s, subject %s, period %s (filled=%s, saved=%s)",
+            "Grade fill finished for class {}, subject {}, period {} (filled={}, saved={})",
             self.class_,
             self.subject,
             self.period,
@@ -180,7 +178,20 @@ class FillGradesScenario(Scenario):
             has=page.locator("div.subjectName", has_text=self.subject)
         )
         course.click()
-        logger.debug("Selected subject %s for class %s", self.subject, self.class_)
+        logger.debug("Selected subject {} for class {}", self.subject, self.class_)
+
+    def _save_changes(self, page):
+        """Click EduPage save controls and confirm the save dialog when shown."""
+        save_button = page.locator(_SAVE_BUTTON_LOCATOR)
+        save_button.wait_for(state="visible", timeout=10000)
+        save_button.click()
+
+        confirm_button = page.get_by_role("button", name="Uložit").first
+        try:
+            confirm_button.wait_for(state="visible", timeout=3000)
+        except Exception:
+            return
+        confirm_button.click()
 
     def _fill_grade_entry(self, page, entry: GradeEntry):
         """Fill one grade-table input identified by student and task names."""
@@ -198,7 +209,7 @@ class FillGradesScenario(Scenario):
                 )
             self._overwrite_grade_value(page, existing_input_name, entry.points)
             logger.info(
-                "Overwrote %s with %s for %s in task %s",
+                "Overwrote {} with {} for {} in task {}",
                 current_value,
                 entry.points,
                 entry.student_display_name,
@@ -211,7 +222,7 @@ class FillGradesScenario(Scenario):
         grade_input.wait_for(state="visible", timeout=10000)
         grade_input.fill(str(entry.points))
         logger.info(
-            "Filled %s points for %s in task %s",
+            "Filled {} points for {} in task {}",
             entry.points,
             entry.student_display_name,
             entry.task_name,
@@ -228,19 +239,26 @@ class FillGradesScenario(Scenario):
         )
 
     def _overwrite_grade_value(self, page, input_name: str, value: GradeValue):
-        """Replace an existing stored EduPage grade value and notify page scripts."""
-        page.evaluate(
-            """({ inputName, value }) => {
-                const field = document.querySelector(`input[name="${inputName}"]`);
-                if (!field) {
-                    throw new Error(`Grade field not found: ${inputName}`);
-                }
-                field.value = String(value);
-                field.dispatchEvent(new Event("input", { bubbles: true }));
-                field.dispatchEvent(new Event("change", { bubbles: true }));
+        """Replace an existing grade through the visible EduPage cell editor."""
+        editor_input_name = input_name.replace("zn_", "nzn_", 1)
+        grade_input = page.locator(f'input[name="{editor_input_name}"]')
+        grade_input.wait_for(state="attached", timeout=10000)
+        grade_input.click()
+        grade_input.fill(str(value))
+
+        updated_value = page.evaluate(
+            """({ storedInputName, editorInputName }) => {
+                const storedField = document.querySelector(`input[name="${storedInputName}"]`);
+                const editorField = document.querySelector(`input[name="${editorInputName}"]`);
+                return {
+                    stored: storedField ? storedField.value : "",
+                    editor: editorField ? editorField.value : "",
+                };
             }""",
-            {"inputName": input_name, "value": str(value)},
+            {"storedInputName": input_name, "editorInputName": editor_input_name},
         )
+        if str(updated_value.get("editor", "")).strip() != str(value):
+            raise ValueError(f"EduPage editor did not keep overwritten value for {input_name}")
 
     def _student_id_for_entry(self, page, entry: GradeEntry) -> str:
         """Return the EduPage student id for a CSV grade entry."""

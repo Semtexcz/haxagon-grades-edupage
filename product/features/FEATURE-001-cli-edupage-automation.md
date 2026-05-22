@@ -33,7 +33,7 @@ The `fill-grades` command accepts a CSV with columns for first name, last name, 
 
 Rows with empty point values are skipped before browser automation starts, which lets review CSV files keep unfinished assignments visible without filling them.
 
-By default, `fill-grades` refuses to replace non-empty grade cells. Use `--overwrite-existing` when the CSV is intended to replace already stored EduPage grade values.
+By default, `fill-grades` refuses to replace non-empty grade cells. Use `--overwrite-existing` when the CSV is intended to replace already stored EduPage grade values. Existing values are changed through EduPage's visible cell editor and the save confirmation dialog is accepted when EduPage shows one.
 
 ## CSV Grade Export
 

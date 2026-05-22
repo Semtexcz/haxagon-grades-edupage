@@ -58,7 +58,7 @@ class AutoWaitLocator:
             def wrapper(*args, **kwargs):
                 state = _AUTO_WAIT_ACTION_STATES.get(item)
                 if state:
-                    logger.debug("Waiting for locator %s before %s", locator, item)
+                    logger.debug("Waiting for locator {} before {}", locator, item)
                     locator.wait_for(state=state, timeout=object.__getattribute__(self, "_timeout"))
                 result = attr(*args, **kwargs)
                 return _wrap_result(result, object.__getattribute__(self, "_timeout"))
@@ -159,15 +159,15 @@ def run_scenario(scenario_factory, *, wait_timeout: float = DEFAULT_WAIT_TIMEOUT
 
         scenario = scenario_factory()
         scenario_name = scenario.__class__.__name__
-        logger.info("Running scenario %s", scenario_name)
+        logger.info("Running scenario {}", scenario_name)
 
         try:
             scenario.run(AutoWaitPage(page, wait_timeout))
         except Exception:
-            logger.exception("Scenario %s failed", scenario_name)
+            logger.exception("Scenario {} failed", scenario_name)
             raise
         else:
-            logger.info("Scenario %s completed", scenario_name)
+            logger.info("Scenario {} completed", scenario_name)
         finally:
             context.close()
             browser.close()

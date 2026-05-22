@@ -30,7 +30,7 @@ def _load_tasks_from_csv(csv_path: Path) -> List[TaskDefinition]:
     if not csv_path.exists():
         raise ValueError(f"CSV file {csv_path} does not exist")
 
-    logger.debug("Loading tasks from CSV %s", csv_path)
+    logger.debug("Loading tasks from CSV {}", csv_path)
 
     with csv_path.open("r", encoding="utf-8", newline="") as handle:
         sample = handle.read(_CSV_SAMPLE_SIZE)
@@ -118,7 +118,7 @@ class CreateTaskScenario(Scenario):
             created += 1
 
         logger.info(
-            "Task creation finished for class %s, subject %s (created=%s, skipped=%s)",
+            "Task creation finished for class {}, subject {} (created={}, skipped={})",
             self.class_,
             self.subject,
             created,
@@ -129,10 +129,10 @@ class CreateTaskScenario(Scenario):
         """Return whether the task does not already appear in the grade table."""
         existing_task = page.locator(TASK_ROW_LOCATOR).filter(has_text=task.name)
         existing_count = existing_task.count()
-        logger.debug("Found %s existing tasks matching %s", existing_count, task.name)
+        logger.debug("Found {} existing tasks matching {}", existing_count, task.name)
         if existing_count > 0:
             logger.info(
-                "Task %s already exists for class %s and subject %s; skipping creation",
+                "Task {} already exists for class {} and subject {}; skipping creation",
                 task.name,
                 self.class_,
                 self.subject,
@@ -142,7 +142,7 @@ class CreateTaskScenario(Scenario):
 
     def _create_task(self, page, task: TaskDefinition):
         """Fill and submit the EduPage new-task form."""
-        logger.info("Creating new task: %s", task.name)
+        logger.info("Creating new task: {}", task.name)
 
         new_task_button = page.locator("a").filter(has_text="Nová písemka/ zkoušení")
         new_task_button.wait_for(state="visible", timeout=10000)
@@ -156,10 +156,10 @@ class CreateTaskScenario(Scenario):
 
         if self.category:
             try:
-                logger.debug("Selecting category by label: %s", self.category)
+                logger.debug("Selecting category by label: {}", self.category)
                 dropdown.select_option(label=self.category)
             except Exception as e:
-                logger.warning("Selecting by label failed (%s), trying JS fallback", e)
+                logger.warning("Selecting by label failed ({}), trying JS fallback", e)
                 page.evaluate(
                     """(labelText) => {
                         const select = document.querySelector('select[name="kategoriaid"]');
@@ -192,7 +192,7 @@ class CreateTaskScenario(Scenario):
         save_button.click()
 
         logger.info(
-            "Created task %s for class %s with %s points (subject %s, category %s)",
+            "Created task {} for class {} with {} points (subject {}, category {})",
             task.name,
             self.class_,
             task.points,

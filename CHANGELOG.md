@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here.
 
+## 0.9.1 - 2026-05-22
+
+### Fixed
+
+- Made `fill-grades --overwrite-existing` use the visible EduPage cell editor and confirm the save dialog when shown.
+- Fixed Loguru message interpolation so scenario logs include concrete values.
+
 ## 0.9.0 - 2026-05-22
 
 ### Added
