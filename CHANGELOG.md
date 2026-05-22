@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here.
 
+## 0.5.1 - 2026-05-22
+
+### Changed
+
+- Moved raw Playwright recordings into `tools/playwright_recordings/` with clearer names and module documentation.
+- Sanitized reference recordings to read credentials from environment variables.
+
 ## 0.5.0 - 2026-05-22
 
 ### Added

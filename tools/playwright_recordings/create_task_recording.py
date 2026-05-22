@@ -5,8 +5,8 @@ only; active implementation lives in `edu_page_automat.scenarios.create_task`.
 """
 
 import os
-import re
-from playwright.sync_api import Playwright, sync_playwright, expect
+
+from playwright.sync_api import Playwright, sync_playwright
 
 
 def run(playwright: Playwright) -> None:
@@ -61,5 +61,6 @@ def run(playwright: Playwright) -> None:
     browser.close()
 
 
-with sync_playwright() as playwright:
-    run(playwright)
+if __name__ == "__main__":
+    with sync_playwright() as playwright:
+        run(playwright)

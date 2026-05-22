@@ -13,6 +13,7 @@ EduPageAutomat is a Python CLI for running repeatable EduPage browser automation
 - `edu_page_automat.scenarios` contains user-facing automation scenarios. Scenario modules should not manage browser startup or session setup directly.
 - `data/` stores local test fixtures, sample task CSV files, spreadsheets, and captured EduPage HTML.
 - `tests/` stores deterministic unit tests. Tests should avoid live EduPage access.
+- `tools/playwright_recordings/` stores sanitized manual Playwright recordings used as implementation references. These files are not packaged CLI modules.
 
 ## Main Flow
 

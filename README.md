@@ -107,6 +107,8 @@ src/edu_page_automat/
 tests/                  deterministic unit tests
 data/                   sample inputs and captured EduPage fixtures
 docs/                   architecture and task sequence documentation
+tools/playwright_recordings/
+                        sanitized manual Playwright recordings
 product/features/       feature scope documents
 project/backlog/        active task documents
 project/done/           completed task documents

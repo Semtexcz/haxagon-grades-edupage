@@ -1,8 +1,20 @@
-import re
-from playwright.sync_api import Playwright, sync_playwright, expect
+"""Reference Playwright recording for the original single-grade fill flow.
+
+This script is not part of the packaged CLI. It is retained only as a sanitized
+recording that helped derive `edu_page_automat.scenarios.fill_grades`.
+Credentials are read from `EDUPAGE_USERNAME` and `EDUPAGE_PASSWORD`.
+"""
+
+import os
+
+from playwright.sync_api import Playwright, sync_playwright
 
 
 def run(playwright: Playwright) -> None:
+    """Run the original recorded grade-fill flow with credentials from env vars."""
+    username_value = os.environ["EDUPAGE_USERNAME"]
+    password_value = os.environ["EDUPAGE_PASSWORD"]
+
     browser = playwright.firefox.launch(headless=False)
     context = browser.new_context()
     page = context.new_page()
@@ -10,10 +22,10 @@ def run(playwright: Playwright) -> None:
     page.get_by_role("link", name="Přihlásit se pomocí účtu").click()
     page.get_by_role("textbox", name="Uživatelské jméno:").click()
     page.get_by_role("textbox", name="Uživatelské jméno:").click()
-    page.get_by_role("textbox", name="Uživatelské jméno:").fill("daniel.kopecky@itgymnazium.cz")
+    page.get_by_role("textbox", name="Uživatelské jméno:").fill(username_value)
     page.get_by_role("button", name="Další").click()
     page.get_by_role("textbox", name="Zadejte heslo:").click()
-    page.get_by_role("textbox", name="Zadejte heslo:").fill("HDgVR8Sy")
+    page.get_by_role("textbox", name="Zadejte heslo:").fill(password_value)
     page.get_by_role("button", name="Další").click()
     page.get_by_role("checkbox", name="Zapamatovat si přihlašovací").check()
     page.goto("https://1itg.edupage.org/user/")
@@ -33,5 +45,6 @@ def run(playwright: Playwright) -> None:
     browser.close()
 
 
-with sync_playwright() as playwright:
-    run(playwright)
+if __name__ == "__main__":
+    with sync_playwright() as playwright:
+        run(playwright)
