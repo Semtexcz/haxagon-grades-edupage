@@ -1,9 +1,10 @@
+"""Command line entry point for EduPage automation scenarios."""
+
 import click
 from playwright.sync_api import sync_playwright
 
 from edu_page_automat import setup_login
 from edu_page_automat.logging_config import setup_logging
-# import všech scénářů
 from edu_page_automat.scenarios.create_task import CreateTaskScenario
 
 logger = setup_logging()
@@ -27,7 +28,6 @@ def login():
         setup_login.run(playwright)
         click.echo("Login complete, session saved.")
 
-# --- zaregistrovat scénáře ---
 for scenario_cls in SCENARIOS:
     scenario_cls.register_cli(cli)
 

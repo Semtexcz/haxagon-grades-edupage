@@ -1,18 +1,18 @@
-import os
-from pathlib import Path
-from playwright.sync_api import Playwright, expect
-from edu_page_automat.logging_config import setup_logging
+"""Interactive EduPage login flow used when no valid session exists."""
 
+import os
 from getpass import getpass
+from pathlib import Path
+
+from playwright.sync_api import Playwright, expect
+
+from edu_page_automat.logging_config import setup_logging
 
 AUTH_FILE = Path("auth.json")
 logger = setup_logging()
 
 def run(playwright: Playwright, browser=None):
-    """
-    Provede login a vrátí (browser, context), kde je session již přihlášená.
-    Pokud browser není předán, vytvoří se nový.
-    """
+    """Perform login and return an authenticated `(browser, context)` pair."""
     base_url = os.environ.get("EDUPAGE_URL", "https://1itg.edupage.org/")
     username_value = os.environ.get("EDUPAGE_USERNAME")
     password_value = os.environ.get("EDUPAGE_PASSWORD")
@@ -24,7 +24,7 @@ def run(playwright: Playwright, browser=None):
         os.environ["EDUPAGE_PASSWORD"] = password_value
 
     if not username_value or not password_value:
-        raise RuntimeError("Chybí EDUPAGE_USERNAME a EDUPAGE_PASSWORD v prostředí")
+        raise RuntimeError("Missing EDUPAGE_USERNAME and EDUPAGE_PASSWORD in the environment")
 
     own_browser = False
     if browser is None:
@@ -34,7 +34,6 @@ def run(playwright: Playwright, browser=None):
     context = browser.new_context()
     page = context.new_page()
 
-    # login flow
     page.goto(base_url, wait_until="domcontentloaded")
     page.get_by_role("link", name="Přihlásit se pomocí účtu").click()
 
@@ -56,7 +55,6 @@ def run(playwright: Playwright, browser=None):
     page.wait_for_url(f"{base_url}user/**")
     logger.info("Login completed: %s", page.url)
 
-    # uložit session
     context.storage_state(path=str(AUTH_FILE))
     logger.info("Session saved to %s", AUTH_FILE)
 

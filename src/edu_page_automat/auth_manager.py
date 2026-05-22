@@ -1,5 +1,9 @@
+"""Session management for EduPage Playwright contexts."""
+
 from pathlib import Path
+
 from playwright.sync_api import Playwright
+
 from edu_page_automat.setup_login import run as setup_login
 from edu_page_automat.logging_config import setup_logging
 
@@ -7,18 +11,18 @@ AUTH_FILE = Path("auth.json")
 logger = setup_logging()
 
 class AuthManager:
+    """Create authenticated Playwright contexts for EduPage scenarios."""
+
     def __init__(self, playwright: Playwright):
+        """Store the Playwright driver used to launch browsers."""
         self.playwright = playwright
 
     def has_session(self) -> bool:
+        """Return whether a stored EduPage session file is available."""
         return AUTH_FILE.exists()
 
     def try_open_session(self, headless=False, slow_mo=200):
-        """
-        Pokusí se otevřít browser+context se session.
-        Vrací tuple (is_valid, browser, context).
-        Pokud session neexistuje -> (False, browser, context=None).
-        """
+        """Try to open and validate the stored EduPage session."""
         if not self.has_session():
             logger.debug("No stored session found")
             return False, None, None
@@ -39,15 +43,11 @@ class AuthManager:
         return True, browser, context
 
     def new_context(self):
-        """
-        Vrátí vždy validní (browser, context) se session.
-        Pokud není platná, spustí setup_login.
-        """
+        """Return a valid authenticated `(browser, context)` pair."""
         valid, browser, context = self.try_open_session(headless=False, slow_mo=200)
         if valid:
             logger.info("Reusing existing EduPage session")
             return browser, context
 
         logger.info("Session missing or invalid, performing login")
-        # pokud session není platná, udělej login a vrať přihlášený browser+context
         return setup_login(self.playwright)

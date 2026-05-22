@@ -1,3 +1,5 @@
+"""Scenario for creating EduPage tests or assignments from CLI task data."""
+
 import csv
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,11 +19,14 @@ _CSV_SAMPLE_SIZE = 2048
 
 @dataclass(frozen=True)
 class TaskDefinition:
+    """Single EduPage task definition parsed from CLI or CSV input."""
+
     name: str
     points: int
 
 
 def _load_tasks_from_csv(csv_path: Path) -> List[TaskDefinition]:
+    """Load task definitions from a CSV file with flexible header names."""
     if not csv_path.exists():
         raise ValueError(f"CSV file {csv_path} does not exist")
 
@@ -73,7 +78,10 @@ def _load_tasks_from_csv(csv_path: Path) -> List[TaskDefinition]:
 
 
 class CreateTaskScenario(Scenario):
+    """Create one or more EduPage test or assignment records."""
+
     def __init__(self, class_: str, tasks: Iterable[TaskDefinition], subject: str = "Informatika", category: str | None = None):
+        """Initialize the target class, subject, category, and task list."""
         self.class_ = class_
         self.subject = subject
         self.category = category
@@ -82,9 +90,9 @@ class CreateTaskScenario(Scenario):
             raise ValueError("At least one task must be provided")
 
     def run(self, page):
+        """Select the target course and create every missing task."""
         page.goto("https://1itg.edupage.org/user/", wait_until="domcontentloaded")
 
-        # vybrat třídu
         page.locator(".edubarCourseListBtn").click()
         locator = page.locator("div.ecourse-standards-subject-title").filter(
             has=page.locator("div.className", has_text=self.class_)
@@ -95,7 +103,6 @@ class CreateTaskScenario(Scenario):
         locator.click()
         logger.debug(f"Selected subject {self.subject} for class {self.class_}")
 
-        # otevřít sekci známek
         page.locator("a.edubarCourseModuleLink", has_text="Známky").click()
 
         locator_configured = "TODO" not in TASK_ROW_LOCATOR
@@ -119,6 +126,7 @@ class CreateTaskScenario(Scenario):
         )
 
     def _task_missing(self, page, task: TaskDefinition) -> bool:
+        """Return whether the task does not already appear in the grade table."""
         existing_task = page.locator(TASK_ROW_LOCATOR).filter(has_text=task.name)
         existing_count = existing_task.count()
         logger.debug("Found %s existing tasks matching %s", existing_count, task.name)
@@ -133,6 +141,7 @@ class CreateTaskScenario(Scenario):
         return True
 
     def _create_task(self, page, task: TaskDefinition):
+        """Fill and submit the EduPage new-task form."""
         logger.info("Creating new task: %s", task.name)
 
         new_task_button = page.locator("a").filter(has_text="Nová písemka/ zkoušení")
@@ -164,7 +173,6 @@ class CreateTaskScenario(Scenario):
                     self.category,
                 )
         else:
-            # Pokud kategorie není zadaná, vyber první viditelnou možnost
             logger.warning("No category specified, selecting first available option")
             page.evaluate("""
                 () => {
@@ -194,6 +202,7 @@ class CreateTaskScenario(Scenario):
 
     @classmethod
     def register_cli(cls, cli_group):
+        """Register the `create-task` command on the provided Click group."""
         @cli_group.command("create-task")
         @click.option("--class", "class_", required=True, help="Class name (e.g., 3.gpu)")
         @click.option("--name", "task_name", required=False, help="Task name (use with --points)")

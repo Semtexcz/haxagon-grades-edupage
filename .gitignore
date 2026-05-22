@@ -4,7 +4,7 @@ auth.json
 chatgpt.txt
 
 *.pyc
+.~lock.*#
 
 .idea/
-seznam_uloh_CPU.csv
 .coverage

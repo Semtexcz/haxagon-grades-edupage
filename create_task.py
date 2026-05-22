@@ -1,8 +1,19 @@
+"""Reference Playwright recording for the original create-task flow.
+
+This script is not part of the packaged CLI. Keep it as a sanitized reference
+only; active implementation lives in `edu_page_automat.scenarios.create_task`.
+"""
+
+import os
 import re
 from playwright.sync_api import Playwright, sync_playwright, expect
 
 
 def run(playwright: Playwright) -> None:
+    """Run the original recorded browser flow with credentials from env vars."""
+    username_value = os.environ["EDUPAGE_USERNAME"]
+    password_value = os.environ["EDUPAGE_PASSWORD"]
+
     browser = playwright.chromium.launch(headless=False)
     context = browser.new_context()
     page = context.new_page()
@@ -10,7 +21,7 @@ def run(playwright: Playwright) -> None:
     page.get_by_role("link", name="Přihlásit se pomocí účtu").click()
     page.get_by_role("textbox", name="Uživatelské jméno:").click()
     page.get_by_role("textbox", name="Uživatelské jméno:").click()
-    page.get_by_role("textbox", name="Uživatelské jméno:").fill("daniel.kopecky@itgmynazium.cz")
+    page.get_by_role("textbox", name="Uživatelské jméno:").fill(username_value)
     page.get_by_role("textbox", name="Uživatelské jméno:").click()
     page.get_by_role("textbox", name="Uživatelské jméno:").press("ArrowLeft")
     page.get_by_role("textbox", name="Uživatelské jméno:").press("ArrowLeft")
@@ -20,17 +31,17 @@ def run(playwright: Playwright) -> None:
     page.get_by_role("textbox", name="Uživatelské jméno:").press("ArrowLeft")
     page.get_by_role("textbox", name="Uživatelské jméno:").press("ArrowLeft")
     page.get_by_role("textbox", name="Uživatelské jméno:").press("ArrowLeft")
-    page.get_by_role("textbox", name="Uživatelské jméno:").fill("daniel.kopecky@itgynazium.cz")
+    page.get_by_role("textbox", name="Uživatelské jméno:").fill(username_value)
     page.get_by_role("textbox", name="Uživatelské jméno:").press("ArrowRight")
-    page.get_by_role("textbox", name="Uživatelské jméno:").fill("daniel.kopecky@itgymnazium.cz")
+    page.get_by_role("textbox", name="Uživatelské jméno:").fill(username_value)
     page.get_by_role("button", name="Další").click()
     page.get_by_role("textbox", name="Zadejte heslo:").click()
-    page.get_by_role("textbox", name="Zadejte heslo:").fill("HDgVR8Sy")
+    page.get_by_role("textbox", name="Zadejte heslo:").fill(password_value)
     page.get_by_role("button", name="Další").click()
     page.get_by_role("button", name="Nic neukládat a víc se neptát").click()
 
 
-    ###Zde začíná scénář
+    # Scenario starts here.
     class_ = "3.gpu"
     task_name = "Test/smažu"
     task_points = "68"

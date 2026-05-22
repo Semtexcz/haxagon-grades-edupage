@@ -1,4 +1,7 @@
+"""Base abstractions for EduPage automation scenarios."""
+
 from abc import ABC, abstractmethod
+
 from playwright.sync_api import Page
 
 class Scenario(ABC):

@@ -1,3 +1,5 @@
+"""Shared logging setup for the EduPageAutomat package."""
+
 from __future__ import annotations
 
 import os
@@ -10,6 +12,7 @@ _CONFIGURED = False
 
 
 def setup_logging(level: Optional[str] = None):
+    """Configure and return the shared Loguru logger."""
     global _CONFIGURED
     if _CONFIGURED:
         return logger
