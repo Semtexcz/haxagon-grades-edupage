@@ -13,6 +13,7 @@ The project provides a command line interface for authenticated EduPage automati
 - Support the `fill-grades` scenario for filling existing task point values from CSV input.
 - Support the `export-grades` scenario for saving visible class grade values to CSV.
 - Support offline Google Classroom grade CSV conversion into the `fill-grades` input format.
+- Support offline grade CSV diffing for generating minimal `fill-grades` inputs.
 
 ## Out of Scope
 
@@ -45,3 +46,9 @@ The exported CSV keeps task categories from EduPage headers such as `Dan - Front
 The `convert-classroom-grades` command converts Google Classroom grade exports into the Czech `fill-grades` CSV format. It is intentionally outside the scenario registry because it only reads and writes local CSV files.
 
 Use `--topic` or `--task` filters to keep only the Classroom rows that correspond to EduPage tasks intended for import.
+
+## Grade Diff
+
+The `diff-grades` command compares the current EduPage CSV export with a source-of-truth grade CSV and writes only non-empty changed target values in the `fill-grades` input format.
+
+Rows with empty source-of-truth points are counted but not emitted because they cannot be represented as a fill operation. Rows missing from the current EduPage export are counted as review items instead of being emitted.

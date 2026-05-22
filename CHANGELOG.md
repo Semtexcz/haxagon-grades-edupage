@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here.
 
+## 0.9.0 - 2026-05-22
+
+### Added
+
+- Added `diff-grades` for generating minimal `fill-grades` CSV files from current EduPage exports and source-of-truth grade CSVs.
+- Documented the offline grade diff flow and its skipped-row summary counts.
+
 ## 0.8.0 - 2026-05-22
 
 ### Added

@@ -80,6 +80,26 @@ Use `--overwrite-existing` only when the CSV should replace grades that are alre
 poetry run edupage fill-grades --class "2.png" --subject "Informatika" --grades-csv data/test_grades_2_png.csv --overwrite-existing
 ```
 
+Convert Google Classroom grades to the `fill-grades` CSV format:
+
+```bash
+poetry run edupage convert-classroom-grades \
+  --input-csv data/classroom_grades_801460822073_2026-05-22.csv \
+  --output-csv data/edupage_classroom_grades_801460822073_2026-05-22.csv \
+  --topic "JavaScript – Certifications"
+```
+
+Write a minimal grade diff CSV for values that still need to be saved to EduPage:
+
+```bash
+poetry run edupage diff-grades \
+  --current-csv data/jpg_grades_export_edupage.csv \
+  --truth-csv data/edupage_classroom_grades_801460822073_2026-05-22.csv \
+  --output-csv data/jpg_grades_diff.csv
+```
+
+The diff output can be used with `fill-grades --overwrite-existing`. Empty source-of-truth grades and rows missing from the current EduPage export are reported in the command summary for manual review.
+
 ## Development
 
 Run tests with:
