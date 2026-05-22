@@ -75,6 +75,7 @@ def test_cli_fill_grades_invokes_run_scenario(monkeypatch, tmp_path):
             "--period",
             "P2",
             "--dry-run",
+            "--overwrite-existing",
         ],
     )
 
@@ -85,6 +86,7 @@ def test_cli_fill_grades_invokes_run_scenario(monkeypatch, tmp_path):
     assert scenario.subject == "Informatika"
     assert scenario.period == "P2"
     assert scenario.save is False
+    assert scenario.overwrite_existing is True
     assert scenario.entries == [
         fill_grades_module.GradeEntry(
             first_name="Žofie",

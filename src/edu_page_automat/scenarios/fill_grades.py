@@ -130,12 +130,14 @@ class FillGradesScenario(Scenario):
         subject: str = "Informatika",
         period: str = "P2",
         save: bool = True,
+        overwrite_existing: bool = False,
     ):
-        """Initialize the target course, grading period, and CSV grade entries."""
+        """Initialize the target course, grading period, overwrite mode, and grade entries."""
         self.class_ = class_
         self.subject = subject
         self.period = period
         self.save = save
+        self.overwrite_existing = overwrite_existing
         self.entries: List[GradeEntry] = list(entries)
         if not self.entries:
             raise ValueError("At least one grade entry must be provided")
@@ -181,7 +183,27 @@ class FillGradesScenario(Scenario):
         """Fill one grade-table input identified by student and task names."""
         student_id = self._student_id_for_entry(page, entry)
         subject_id, task_uid = self._task_identifiers(page, entry.task_name)
-        input_name = f"nzn_{student_id}_{subject_id}_{task_uid}_{self.period}_1"
+        grade_key = f"{student_id}_{subject_id}_{task_uid}_{self.period}_1"
+        existing_input_name = f"zn_{grade_key}"
+        current_value = self._current_grade_value(page, existing_input_name)
+
+        if current_value:
+            if not self.overwrite_existing:
+                raise ValueError(
+                    f"Grade for {entry.student_display_name} in task {entry.task_name} already has value "
+                    f"'{current_value}'. Use --overwrite-existing to replace it."
+                )
+            self._overwrite_grade_value(page, existing_input_name, entry.points)
+            logger.info(
+                "Overwrote %s with %s for %s in task %s",
+                current_value,
+                entry.points,
+                entry.student_display_name,
+                entry.task_name,
+            )
+            return
+
+        input_name = f"nzn_{grade_key}"
         grade_input = page.locator(f'input[name="{input_name}"]')
         grade_input.wait_for(state="visible", timeout=10000)
         grade_input.fill(str(entry.points))
@@ -190,6 +212,31 @@ class FillGradesScenario(Scenario):
             entry.points,
             entry.student_display_name,
             entry.task_name,
+        )
+
+    def _current_grade_value(self, page, input_name: str) -> str:
+        """Return the current stored EduPage grade value for an existing grade field."""
+        return page.evaluate(
+            """(inputName) => {
+                const field = document.querySelector(`input[name="${inputName}"]`);
+                return field ? field.value : "";
+            }""",
+            input_name,
+        )
+
+    def _overwrite_grade_value(self, page, input_name: str, value: GradeValue):
+        """Replace an existing stored EduPage grade value and notify page scripts."""
+        page.evaluate(
+            """({ inputName, value }) => {
+                const field = document.querySelector(`input[name="${inputName}"]`);
+                if (!field) {
+                    throw new Error(`Grade field not found: ${inputName}`);
+                }
+                field.value = String(value);
+                field.dispatchEvent(new Event("input", { bubbles: true }));
+                field.dispatchEvent(new Event("change", { bubbles: true }));
+            }""",
+            {"inputName": input_name, "value": str(value)},
         )
 
     def _student_id_for_entry(self, page, entry: GradeEntry) -> str:
@@ -295,11 +342,26 @@ class FillGradesScenario(Scenario):
         @click.option("--subject", "subject", default="Informatika", show_default=True, help="Subject name in EduPage course list")
         @click.option("--period", "period", default="P2", show_default=True, help="EduPage grading period used in grade input names")
         @click.option("--dry-run", "dry_run", is_flag=True, help="Fill fields but do not click the save button")
-        def run_fill_grades(class_, grades_csv, subject, period, dry_run):
+        @click.option(
+            "--overwrite-existing",
+            "overwrite_existing",
+            is_flag=True,
+            help="Replace existing grade values instead of failing when a grade is already present.",
+        )
+        def run_fill_grades(class_, grades_csv, subject, period, dry_run, overwrite_existing):
             """Fill EduPage grade points from CSV rows."""
             try:
                 entries = _load_grade_entries_from_csv(grades_csv)
             except ValueError as exc:
                 raise click.BadParameter(str(exc)) from exc
 
-            run_scenario(lambda: cls(class_, entries, subject=subject, period=period, save=not dry_run))
+            run_scenario(
+                lambda: cls(
+                    class_,
+                    entries,
+                    subject=subject,
+                    period=period,
+                    save=not dry_run,
+                    overwrite_existing=overwrite_existing,
+                )
+            )

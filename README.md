@@ -68,6 +68,18 @@ poetry run edupage create-task --class "3.gpu" --task-csv data/seznam_uloh_JS.cs
 
 CSV input must include a task name column (`name`, `task`, or `nazev`) and a points column (`points`, `point`, `score`, or `body`).
 
+Fill grades from CSV:
+
+```bash
+poetry run edupage fill-grades --class "2.png" --subject "Informatika" --grades-csv data/test_grades_2_png.csv
+```
+
+Use `--overwrite-existing` only when the CSV should replace grades that are already stored in EduPage:
+
+```bash
+poetry run edupage fill-grades --class "2.png" --subject "Informatika" --grades-csv data/test_grades_2_png.csv --overwrite-existing
+```
+
 ## Development
 
 Run tests with:

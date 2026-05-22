@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## 0.5.0 - 2026-05-22
+
+### Added
+
+- Added `--overwrite-existing` to `fill-grades` for intentionally replacing existing EduPage grade values.
+
 ## 0.4.2 - 2026-05-22
 
 ### Fixed

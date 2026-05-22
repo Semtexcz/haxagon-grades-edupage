@@ -178,12 +178,70 @@ def test_fill_grade_entry_fills_expected_input(monkeypatch) -> None:
 
     monkeypatch.setattr(scenario, "_student_id_for_entry", lambda unused_page, unused_entry: "-440")
     monkeypatch.setattr(scenario, "_task_identifiers", lambda unused_page, unused_task_name: ("-91", "132812"))
+    monkeypatch.setattr(scenario, "_current_grade_value", lambda unused_page, unused_input_name: "")
 
     scenario._fill_grade_entry(page, entry)
 
     page.locator.assert_called_once_with('input[name="nzn_-440_-91_132812_P2_1"]')
     grade_input.wait_for.assert_called_once_with(state="visible", timeout=10000)
     grade_input.fill.assert_called_once_with("100")
+
+
+def test_fill_grade_entry_rejects_existing_grade_without_overwrite(monkeypatch) -> None:
+    """Existing grades are protected unless overwrite mode is enabled."""
+    entry = GradeEntry("Žofie", "Žužlavá", "Task", 80)
+    scenario = FillGradesScenario(class_="2.png", entries=[entry], subject="Informatika")
+    page = MagicMock()
+
+    monkeypatch.setattr(scenario, "_student_id_for_entry", lambda unused_page, unused_entry: "-440")
+    monkeypatch.setattr(scenario, "_task_identifiers", lambda unused_page, unused_task_name: ("-91", "132810"))
+    monkeypatch.setattr(scenario, "_current_grade_value", lambda unused_page, unused_input_name: "100")
+
+    with pytest.raises(ValueError, match="Use --overwrite-existing"):
+        scenario._fill_grade_entry(page, entry)
+
+
+def test_fill_grade_entry_overwrites_existing_grade(monkeypatch) -> None:
+    """Overwrite mode replaces the stored existing EduPage grade field."""
+    entry = GradeEntry("Žofie", "Žužlavá", "Task", "m")
+    scenario = FillGradesScenario(
+        class_="2.png",
+        entries=[entry],
+        subject="Informatika",
+        overwrite_existing=True,
+    )
+    page = MagicMock()
+    overwritten: list[tuple[str, str]] = []
+
+    monkeypatch.setattr(scenario, "_student_id_for_entry", lambda unused_page, unused_entry: "-440")
+    monkeypatch.setattr(scenario, "_task_identifiers", lambda unused_page, unused_task_name: ("-91", "132812"))
+    monkeypatch.setattr(scenario, "_current_grade_value", lambda unused_page, unused_input_name: "90")
+    monkeypatch.setattr(
+        scenario,
+        "_overwrite_grade_value",
+        lambda unused_page, input_name, value: overwritten.append((input_name, value)),
+    )
+
+    scenario._fill_grade_entry(page, entry)
+
+    assert overwritten == [("zn_-440_-91_132812_P2_1", "m")]
+    page.locator.assert_not_called()
+
+
+def test_overwrite_grade_value_updates_hidden_field() -> None:
+    """Existing grade overwrites update the hidden field through page JavaScript."""
+    scenario = FillGradesScenario(
+        class_="2.png",
+        entries=[GradeEntry("Žofie", "Žužlavá", "Task", 80)],
+        subject="Informatika",
+        overwrite_existing=True,
+    )
+    page = MagicMock()
+
+    scenario._overwrite_grade_value(page, "zn_-440_-91_132810_P2_1", 80)
+
+    _, payload = page.evaluate.call_args.args
+    assert payload == {"inputName": "zn_-440_-91_132810_P2_1", "value": "80"}
 
 
 def test_run_fills_entries_and_saves(monkeypatch) -> None:
