@@ -8,3 +8,5 @@ chatgpt.txt
 
 .idea/
 .coverage
+
+dist/
