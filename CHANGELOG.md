@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here.
 
+## 0.6.0 - 2026-05-22
+
+### Added
+
+- Added the `export-grades` CLI scenario for saving visible class grade-table values to CSV.
+- Documented the grade export flow and CSV output format.
+
 ## 0.5.1 - 2026-05-22
 
 ### Changed

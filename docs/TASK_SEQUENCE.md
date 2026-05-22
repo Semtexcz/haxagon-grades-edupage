@@ -7,6 +7,7 @@ No active backlog tasks are currently queued.
 Completed tasks:
 
 1. `TASK-001-clean-project-fixtures-and-docs`
+2. `TASK-002-export-grades-to-csv`
 
 ## Dependencies
 

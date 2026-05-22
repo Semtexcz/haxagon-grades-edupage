@@ -46,6 +46,12 @@ Existing grade values are protected by default. With `--overwrite-existing`, the
 
 The scenario assumes tasks already exist in EduPage. Task creation remains the responsibility of `CreateTaskScenario`.
 
+## Grade Export Flow
+
+`ExportGradesScenario` selects the target course, opens the Známky module, reads all visible task headers from `.znamkyUdalostHeader`, and walks each visible student row in the grade table. It exports one CSV row for each visible student/task grade cell using the headers `first_name`, `last_name`, `task_name`, and `points`.
+
+The export is a snapshot of the currently visible EduPage table. Empty grade cells are included with an empty `points` value so the CSV can be reviewed or reused as compatible input for `fill-grades`.
+
 ## Test Strategy Boundary
 
 Unit tests should mock Playwright objects where possible. Live browser and EduPage tests are outside the default test suite because they depend on credentials, network availability, and mutable EduPage state.

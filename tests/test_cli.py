@@ -2,6 +2,7 @@ from click.testing import CliRunner
 
 from edu_page_automat.cli import cli as main_cli
 from edu_page_automat.scenarios import create_task as create_task_module
+from edu_page_automat.scenarios import export_grades as export_grades_module
 from edu_page_automat.scenarios import fill_grades as fill_grades_module
 
 
@@ -95,3 +96,45 @@ def test_cli_fill_grades_invokes_run_scenario(monkeypatch, tmp_path):
             points=100,
         )
     ]
+
+
+def test_cli_list_outputs_export_grades_command():
+    """The scenario registry includes the grade-export scenario."""
+    runner = CliRunner()
+
+    result = runner.invoke(main_cli, ["list"])
+
+    assert result.exit_code == 0
+    assert "exportgrades" in result.output
+
+
+def test_cli_export_grades_invokes_run_scenario(monkeypatch, tmp_path):
+    """The export-grades command builds a scenario with the selected CSV path."""
+    runner = CliRunner()
+    captured = {}
+    output_csv = tmp_path / "grades.csv"
+
+    def fake_run_scenario(factory):
+        captured["scenario"] = factory()
+
+    monkeypatch.setattr(export_grades_module, "run_scenario", fake_run_scenario)
+
+    result = runner.invoke(
+        main_cli,
+        [
+            "export-grades",
+            "--class",
+            "2.png",
+            "--output-csv",
+            str(output_csv),
+            "--subject",
+            "Informatika",
+        ],
+    )
+
+    assert result.exit_code == 0
+    scenario = captured["scenario"]
+    assert isinstance(scenario, export_grades_module.ExportGradesScenario)
+    assert scenario.class_ == "2.png"
+    assert scenario.subject == "Informatika"
+    assert scenario.output_csv == output_csv

@@ -11,6 +11,7 @@ The project provides a command line interface for authenticated EduPage automati
 - Register scenario commands through the `Scenario` base class.
 - Support the `create-task` scenario for creating tests or assignments from CLI options or CSV input.
 - Support the `fill-grades` scenario for filling existing task point values from CSV input.
+- Support the `export-grades` scenario for saving visible class grade values to CSV.
 
 ## Out of Scope
 
@@ -29,3 +30,9 @@ The project provides a command line interface for authenticated EduPage automati
 The `fill-grades` command accepts a CSV with columns for first name, last name, task name, and points. Czech-friendly headers such as `jmeno`, `prijmeni`, `jmeno_ulohy`, and `pocet_bodu` are supported alongside English alternatives. Grade values may be whole-number points or the EduPage `m` marker.
 
 By default, `fill-grades` refuses to replace non-empty grade cells. Use `--overwrite-existing` when the CSV is intended to replace already stored EduPage grade values.
+
+## CSV Grade Export
+
+The `export-grades` command writes a CSV with `first_name`, `last_name`, `task_name`, and `points` columns. It exports all visible student/task cells from the selected class and subject grade table, including empty cells with an empty `points` value.
+
+The exported CSV uses headers compatible with `fill-grades`, so it can be reviewed, edited, and used later as grade input.
