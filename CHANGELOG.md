@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## 0.4.1 - 2026-05-22
+
+### Fixed
+
+- Made `fill-grades` wait for the grade table and resolve students/tasks through DOM data with clearer diagnostics.
+
 ## 0.4.0 - 2026-05-22
 
 ### Added

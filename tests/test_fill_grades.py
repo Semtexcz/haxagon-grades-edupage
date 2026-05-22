@@ -104,16 +104,16 @@ def test_student_id_for_entry_reads_student_link_query() -> None:
         entries=[GradeEntry("Žofie", "Žužlavá", "Task", 100)],
     )
     page = MagicMock()
-    student_locator = MagicMock()
-    first_student = MagicMock()
-    student_locator.count.return_value = 1
-    student_locator.first.return_value = first_student
-    first_student.get_attribute.return_value = "?what=zobraztriedu&studentid=-440&p=-91"
-    page.locator.return_value = student_locator
+    page.evaluate.return_value = [
+        {
+            "text": "Žužlavá, Žofie",
+            "href": "?what=zobraztriedu&studentid=-440&p=-91",
+        }
+    ]
 
     student_id = scenario._student_id_for_entry(page, scenario.entries[0])
 
-    page.locator.assert_called_once_with("a.edubarSmartLink", has_text="Žužlavá, Žofie")
+    page.wait_for_selector.assert_called_once_with('a[href*="studentid="]', state="attached", timeout=10000)
     assert student_id == "-440"
 
 
@@ -125,20 +125,19 @@ def test_task_identifiers_read_task_header_attributes() -> None:
         entries=[GradeEntry("Žofie", "Žužlavá", "Task", 100)],
     )
     page = MagicMock()
-    headers = MagicMock()
-    header = MagicMock()
-    headers.filter.return_value = headers
-    headers.count.return_value = 1
-    headers.first.return_value = header
-    header.get_attribute.side_effect = lambda name: {"data-pid": "-91", "data-uid": "132812"}[name]
-    page.locator.return_value = headers
+    page.evaluate.return_value = [
+        {
+            "text": "Task",
+            "subjectId": "-91",
+            "taskUid": "132812",
+        }
+    ]
 
     subject_id, task_uid = scenario._task_identifiers(page, "Task")
 
     assert subject_id == "-91"
     assert task_uid == "132812"
-    page.locator.assert_any_call(".znamkyUdalostHeader")
-    page.locator.assert_any_call(".znHeaderUdalost", has_text="Task")
+    page.wait_for_selector.assert_called_once_with(".znamkyUdalostHeader", state="attached", timeout=10000)
 
 
 def test_fill_grade_entry_fills_expected_input(monkeypatch) -> None:
@@ -186,5 +185,6 @@ def test_run_fills_entries_and_saves(monkeypatch) -> None:
 
     assert filled == ["Algorithms", "Compilers"]
     grades_link.click.assert_called_once_with()
+    page.wait_for_selector.assert_called_once_with(".znamkyUdalostHeader", state="attached", timeout=15000)
     save_button.wait_for.assert_called_once_with(state="visible", timeout=10000)
     save_button.click.assert_called_once_with()

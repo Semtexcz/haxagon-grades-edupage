@@ -17,6 +17,7 @@ _CSV_SAMPLE_SIZE = 2048
 _GRADE_PAGE_URL = "https://1itg.edupage.org/user/"
 _TASK_HEADER_LOCATOR = ".znamkyUdalostHeader"
 _SAVE_BUTTON_LOCATOR = "a.ulozitBtn"
+_STUDENT_LINK_SELECTOR = 'a[href*="studentid="]'
 
 
 @dataclass(frozen=True)
@@ -134,6 +135,7 @@ class FillGradesScenario(Scenario):
         page.goto(_GRADE_PAGE_URL, wait_until="domcontentloaded")
         self._select_course(page)
         page.locator("a.edubarCourseModuleLink", has_text="Známky").click()
+        page.wait_for_selector(_TASK_HEADER_LOCATOR, state="attached", timeout=15000)
 
         filled = 0
         for entry in self.entries:
@@ -182,34 +184,90 @@ class FillGradesScenario(Scenario):
 
     def _student_id_for_entry(self, page, entry: GradeEntry) -> str:
         """Return the EduPage student id for a CSV grade entry."""
-        student = page.locator("a.edubarSmartLink", has_text=entry.student_display_name)
-        count = student.count()
-        if count != 1:
-            raise ValueError(f"Expected one student named {entry.student_display_name}, found {count}")
+        page.wait_for_selector(_STUDENT_LINK_SELECTOR, state="attached", timeout=10000)
+        matches = page.evaluate(
+            """(expectedName) => {
+                const normalize = (value) => value.replace(/\\s+/g, " ").trim();
+                return Array.from(document.querySelectorAll('a[href*="studentid="]'))
+                    .map((link) => ({
+                        text: normalize(link.textContent || ""),
+                        href: link.getAttribute("href") || "",
+                    }))
+                    .filter((link) => link.text === expectedName);
+            }""",
+            entry.student_display_name,
+        )
 
-        href = student.first().get_attribute("href") or ""
+        if len(matches) != 1:
+            available = self._available_student_names(page)
+            raise ValueError(
+                f"Expected one student named {entry.student_display_name}, found {len(matches)}. "
+                f"Current URL: {page.url}. Available students include: {available}"
+            )
+
+        href = matches[0]["href"]
         marker = "studentid="
         if marker not in href:
             raise ValueError(f"Could not read student id for {entry.student_display_name}")
 
         return href.split(marker, 1)[1].split("&", 1)[0]
 
+    def _available_student_names(self, page) -> str:
+        """Return a short sample of student names currently visible in the grade table."""
+        names = page.evaluate(
+            """() => {
+                const normalize = (value) => value.replace(/\\s+/g, " ").trim();
+                return Array.from(document.querySelectorAll('a[href*="studentid="]'))
+                    .map((link) => normalize(link.textContent || ""))
+                    .filter((name) => name.length > 0)
+                    .slice(0, 10);
+            }"""
+        )
+        return ", ".join(names) if names else "(none)"
+
     def _task_identifiers(self, page, task_name: str) -> tuple[str, str]:
         """Return subject id and task uid for an existing grade-table task."""
-        task_header = page.locator(_TASK_HEADER_LOCATOR).filter(
-            has=page.locator(".znHeaderUdalost", has_text=task_name)
+        page.wait_for_selector(_TASK_HEADER_LOCATOR, state="attached", timeout=10000)
+        matches = page.evaluate(
+            """(expectedTaskName) => {
+                const normalize = (value) => value.replace(/\\s+/g, " ").trim();
+                return Array.from(document.querySelectorAll(".znamkyUdalostHeader"))
+                    .map((header) => ({
+                        text: normalize(header.querySelector(".znHeaderUdalost")?.textContent || ""),
+                        subjectId: header.getAttribute("data-pid"),
+                        taskUid: header.getAttribute("data-uid"),
+                    }))
+                    .filter((header) => header.text === expectedTaskName);
+            }""",
+            task_name,
         )
-        count = task_header.count()
-        if count != 1:
-            raise ValueError(f"Expected one task named {task_name}, found {count}")
 
-        header = task_header.first()
-        subject_id = header.get_attribute("data-pid")
-        task_uid = header.get_attribute("data-uid")
+        if len(matches) != 1:
+            available = self._available_task_names(page)
+            raise ValueError(
+                f"Expected one task named {task_name}, found {len(matches)}. "
+                f"Current URL: {page.url}. Available tasks include: {available}"
+            )
+
+        subject_id = matches[0]["subjectId"]
+        task_uid = matches[0]["taskUid"]
         if not subject_id or not task_uid:
             raise ValueError(f"Could not read identifiers for task {task_name}")
 
         return subject_id, task_uid
+
+    def _available_task_names(self, page) -> str:
+        """Return a short sample of task names currently visible in the grade table."""
+        names = page.evaluate(
+            """() => {
+                const normalize = (value) => value.replace(/\\s+/g, " ").trim();
+                return Array.from(document.querySelectorAll(".znamkyUdalostHeader .znHeaderUdalost"))
+                    .map((header) => normalize(header.textContent || ""))
+                    .filter((name) => name.length > 0)
+                    .slice(0, 10);
+            }"""
+        )
+        return ", ".join(names) if names else "(none)"
 
     @classmethod
     def register_cli(cls, cli_group):
