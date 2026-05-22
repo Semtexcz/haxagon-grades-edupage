@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here.
 
+## 0.4.0 - 2026-05-22
+
+### Added
+
+- Added the `fill-grades` CLI scenario for filling existing EduPage task points from CSV input.
+- Documented the grade-filling flow and supported CSV headers.
+
 ## 0.3.1 - 2026-05-22
 
 ### Added

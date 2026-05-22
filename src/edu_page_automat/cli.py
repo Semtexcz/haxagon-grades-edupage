@@ -6,9 +6,10 @@ from playwright.sync_api import sync_playwright
 from edu_page_automat import setup_login
 from edu_page_automat.logging_config import setup_logging
 from edu_page_automat.scenarios.create_task import CreateTaskScenario
+from edu_page_automat.scenarios.fill_grades import FillGradesScenario
 
 logger = setup_logging()
-SCENARIOS = [CreateTaskScenario]
+SCENARIOS = [CreateTaskScenario, FillGradesScenario]
 
 @click.group()
 def cli():
