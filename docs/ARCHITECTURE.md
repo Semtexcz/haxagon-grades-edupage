@@ -39,7 +39,7 @@ Scenario code should accept already-authenticated Playwright pages from `scenari
 
 ## Grade Filling Flow
 
-`FillGradesScenario` reads CSV rows with first name, last name, task name, and points. After selecting the target course and opening the Známky module, it resolves each student from the grade-table link text `Last, First`, resolves each existing task from `.znamkyUdalostHeader`, fills the matching `nzn_{student_id}_{subject_id}_{task_uid}_{period}_1` input, and clicks the EduPage save button unless `--dry-run` is used.
+`FillGradesScenario` reads CSV rows with first name, last name, task name, and a grade value. Grade values may be whole-number points or the EduPage `m` marker. After selecting the target course and opening the Známky module, it resolves each student from the grade-table link text `Last, First`, resolves each existing task from `.znamkyUdalostHeader`, fills the matching `nzn_{student_id}_{subject_id}_{task_uid}_{period}_1` input, and clicks the EduPage save button unless `--dry-run` is used.
 
 The scenario assumes tasks already exist in EduPage. Task creation remains the responsibility of `CreateTaskScenario`.
 

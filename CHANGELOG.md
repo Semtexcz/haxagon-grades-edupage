@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## 0.4.2 - 2026-05-22
+
+### Fixed
+
+- Allowed `fill-grades` CSV grade values to use the EduPage `m` marker in addition to numeric points.
+
 ## 0.4.1 - 2026-05-22
 
 ### Fixed

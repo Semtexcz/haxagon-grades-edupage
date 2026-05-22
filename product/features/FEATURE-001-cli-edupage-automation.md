@@ -26,4 +26,4 @@ The project provides a command line interface for authenticated EduPage automati
 
 ## CSV Grade Input
 
-The `fill-grades` command accepts a CSV with columns for first name, last name, task name, and points. Czech-friendly headers such as `jmeno`, `prijmeni`, `jmeno_ulohy`, and `pocet_bodu` are supported alongside English alternatives.
+The `fill-grades` command accepts a CSV with columns for first name, last name, task name, and points. Czech-friendly headers such as `jmeno`, `prijmeni`, `jmeno_ulohy`, and `pocet_bodu` are supported alongside English alternatives. Grade values may be whole-number points or the EduPage `m` marker.

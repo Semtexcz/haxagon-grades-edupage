@@ -8,6 +8,7 @@ from edu_page_automat.scenarios.fill_grades import (
     FillGradesScenario,
     GradeEntry,
     _load_grade_entries_from_csv,
+    _parse_grade_value,
 )
 
 
@@ -64,7 +65,7 @@ class TestLoadGradeEntriesFromCsv:
         ]
 
     def test_raises_for_invalid_points(self, tmp_path: Path) -> None:
-        """Invalid point values fail before browser automation starts."""
+        """Unsupported grade values fail before browser automation starts."""
         csv_path = tmp_path / "invalid_points.csv"
         write_csv(
             csv_path,
@@ -74,8 +75,35 @@ class TestLoadGradeEntriesFromCsv:
             ],
         )
 
-        with pytest.raises(ValueError, match=r"Row 2: invalid integer for points -> 'sto'"):
+        with pytest.raises(ValueError, match=r"Row 2: invalid grade value -> 'sto'"):
             _load_grade_entries_from_csv(csv_path)
+
+    def test_accepts_absence_marker_m_for_points(self, tmp_path: Path) -> None:
+        """CSV grade values may use the EduPage absence marker m."""
+        csv_path = tmp_path / "absence.csv"
+        write_csv(
+            csv_path,
+            [
+                "jmeno,prijmeni,jmeno_ulohy,pocet_bodu",
+                "Žofie,Žužlavá,Task,m",
+            ],
+        )
+
+        entries = _load_grade_entries_from_csv(csv_path)
+
+        assert entries == [
+            GradeEntry(
+                first_name="Žofie",
+                last_name="Žužlavá",
+                task_name="Task",
+                points="m",
+            )
+        ]
+
+
+def test_parse_grade_value_accepts_uppercase_m() -> None:
+    """The m marker is normalized to lowercase before filling."""
+    assert _parse_grade_value(" M ", row_index=2) == "m"
 
 
 def test_grade_entry_student_display_name() -> None:

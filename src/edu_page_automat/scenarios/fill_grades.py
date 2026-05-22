@@ -3,7 +3,7 @@
 import csv
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable, List, TypeAlias
 
 import click
 
@@ -18,6 +18,7 @@ _GRADE_PAGE_URL = "https://1itg.edupage.org/user/"
 _TASK_HEADER_LOCATOR = ".znamkyUdalostHeader"
 _SAVE_BUTTON_LOCATOR = "a.ulozitBtn"
 _STUDENT_LINK_SELECTOR = 'a[href*="studentid="]'
+GradeValue: TypeAlias = int | str
 
 
 @dataclass(frozen=True)
@@ -27,7 +28,7 @@ class GradeEntry:
     first_name: str
     last_name: str
     task_name: str
-    points: int
+    points: GradeValue
 
     @property
     def student_display_name(self) -> str:
@@ -46,6 +47,18 @@ def _find_header(fieldnames: list[str], accepted_names: set[str], label: str) ->
         if _normalize_header(fieldname) in accepted_names:
             return fieldname
     raise ValueError(f"CSV header must contain a column for {label}")
+
+
+def _parse_grade_value(value: str, row_index: int) -> GradeValue:
+    """Parse a CSV grade value accepted by EduPage grade inputs."""
+    normalized_value = value.strip()
+    if normalized_value.casefold() == "m":
+        return "m"
+
+    try:
+        return int(normalized_value)
+    except ValueError as exc:
+        raise ValueError(f"Row {row_index}: invalid grade value -> '{value}'") from exc
 
 
 def _load_grade_entries_from_csv(csv_path: Path) -> List[GradeEntry]:
@@ -90,10 +103,7 @@ def _load_grade_entries_from_csv(csv_path: Path) -> List[GradeEntry]:
             if not task_name:
                 raise ValueError(f"Row {row_index}: missing task name")
 
-            try:
-                points = int(points_value)
-            except ValueError as exc:
-                raise ValueError(f"Row {row_index}: invalid integer for points -> '{points_value}'") from exc
+            points = _parse_grade_value(points_value, row_index)
 
             entries.append(
                 GradeEntry(
