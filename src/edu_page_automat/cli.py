@@ -3,12 +3,18 @@
 from pathlib import Path
 
 import click
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import sync_playwright
 
 from edu_page_automat import setup_login
 from edu_page_automat.classroom_grades import convert_classroom_grades_csv
 from edu_page_automat.grade_diff import write_grade_diff_csv
 from edu_page_automat.logging_config import setup_logging
+from edu_page_automat.playwright_browsers import (
+    install_firefox_browser,
+    is_missing_browser_error,
+    missing_browser_message,
+)
 from edu_page_automat.scenarios.create_task import CreateTaskScenario
 from edu_page_automat.scenarios.export_grades import ExportGradesScenario
 from edu_page_automat.scenarios.fill_grades import FillGradesScenario
@@ -31,8 +37,23 @@ def list():
 def login():
     """Force a new login and save session."""
     with sync_playwright() as playwright:
-        setup_login.run(playwright)
+        try:
+            setup_login.run(playwright)
+        except PlaywrightError as exc:
+            if is_missing_browser_error(exc):
+                raise click.ClickException(missing_browser_message()) from exc
+            raise
         click.echo("Login complete, session saved.")
+
+
+@cli.command("install-browsers")
+def install_browsers():
+    """Install Playwright browser binaries used by EduPage automation."""
+    try:
+        install_firefox_browser()
+    except Exception as exc:
+        raise click.ClickException(f"Playwright browser installation failed: {exc}") from exc
+    click.echo("Playwright Firefox browser installed.")
 
 
 @cli.command("convert-classroom-grades")

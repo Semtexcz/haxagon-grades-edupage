@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here.
 
+## 0.9.2 - 2026-05-22
+
+### Added
+
+- Added `install-browsers` to install Playwright Firefox browser binaries in the active CLI environment.
+
+### Fixed
+
+- Replaced raw missing-browser Playwright tracebacks with actionable install guidance.
+- Documented pipx browser installation.
+
 ## 0.9.1 - 2026-05-22
 
 ### Fixed

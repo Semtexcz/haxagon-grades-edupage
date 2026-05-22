@@ -2,10 +2,13 @@
 
 from typing import Any, Optional
 
+import click
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import FrameLocator, Locator, Page, sync_playwright
 
 from edu_page_automat.auth_manager import AuthManager
 from edu_page_automat.logging_config import setup_logging
+from edu_page_automat.playwright_browsers import is_missing_browser_error, missing_browser_message
 
 DEFAULT_WAIT_TIMEOUT = 10_000
 _AUTO_WAIT_ACTION_STATES = {
@@ -151,7 +154,12 @@ def run_scenario(scenario_factory, *, wait_timeout: float = DEFAULT_WAIT_TIMEOUT
     """Run a scenario in Playwright with authenticated auto-waiting page access."""
     with sync_playwright() as playwright:
         auth = AuthManager(playwright)
-        browser, context = auth.new_context()
+        try:
+            browser, context = auth.new_context()
+        except PlaywrightError as exc:
+            if is_missing_browser_error(exc):
+                raise click.ClickException(missing_browser_message()) from exc
+            raise
         page = context.pages[0] if context.pages else context.new_page()
 
         page.set_default_timeout(wait_timeout)

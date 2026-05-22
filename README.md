@@ -18,10 +18,21 @@ EduPageAutomat is a Python CLI for repeatable EduPage browser automation built o
 
 ## Installation
 
+For local development with Poetry:
+
 ```bash
 poetry install
-poetry run playwright install firefox
+poetry run edupage install-browsers
 ```
+
+For an isolated CLI install with pipx:
+
+```bash
+pipx install .
+edupage install-browsers
+```
+
+Run `edupage install-browsers` again after Playwright upgrades if browser-backed commands report a missing browser executable.
 
 ## Configuration
 
@@ -42,6 +53,7 @@ The login flow writes `auth.json` in the repository root. This file contains ses
 ```bash
 poetry run edupage --help
 poetry run edupage list
+poetry run edupage install-browsers
 poetry run edupage login
 ```
 

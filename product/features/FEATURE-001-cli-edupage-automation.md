@@ -14,6 +14,7 @@ The project provides a command line interface for authenticated EduPage automati
 - Support the `export-grades` scenario for saving visible class grade values to CSV.
 - Support offline Google Classroom grade CSV conversion into the `fill-grades` input format.
 - Support offline grade CSV diffing for generating minimal `fill-grades` inputs.
+- Support installing Playwright browser binaries from the packaged CLI environment.
 
 ## Out of Scope
 
@@ -26,6 +27,12 @@ The project provides a command line interface for authenticated EduPage automati
 - EduPage website through Playwright Firefox.
 - `click` for CLI commands and validation.
 - `loguru` for console logging.
+
+## Browser Installation
+
+The `install-browsers` command installs the Playwright Firefox browser for the same Python environment that runs `edupage`. This avoids pipx and Poetry environment mismatches.
+
+When Firefox browser binaries are missing, browser-backed commands should fail with actionable install guidance instead of a raw Playwright traceback.
 
 ## CSV Grade Input
 

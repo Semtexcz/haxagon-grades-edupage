@@ -11,6 +11,7 @@ EduPageAutomat is a Python CLI for running repeatable EduPage browser automation
 - `edu_page_automat.grade_diff` owns offline CSV diffing between current EduPage exports and source-of-truth grade CSV files.
 - `edu_page_automat.auth_manager` owns session discovery, validation, and login fallback.
 - `edu_page_automat.setup_login` owns the interactive EduPage login flow and writes `auth.json`.
+- `edu_page_automat.playwright_browsers` owns Playwright browser binary installation and missing-browser diagnostics.
 - `edu_page_automat.scenario_runner` owns Playwright lifecycle management and auto-wait wrappers.
 - `edu_page_automat.scenarios` contains user-facing automation scenarios. Scenario modules should not manage browser startup or session setup directly.
 - `data/` stores local test fixtures, sample task CSV files, spreadsheets, and captured EduPage HTML.
@@ -30,6 +31,12 @@ EduPageAutomat is a Python CLI for running repeatable EduPage browser automation
 `AuthManager` first checks `auth.json`. If it exists, it opens a Firefox context with that storage state and visits the EduPage user page. If the resulting URL indicates a login page, the stored session is closed and `setup_login.run` performs a fresh login.
 
 `auth.json` is intentionally ignored by Git because it contains session state.
+
+## Browser Installation Flow
+
+Playwright requires browser binaries outside the Python package files. The `install-browsers` command runs `python -m playwright install firefox` through the same Python interpreter that launched `edupage`, so it works in both Poetry and pipx environments.
+
+If a login or scenario command fails because the Firefox executable is missing, the CLI rewrites Playwright's raw launch exception into a short message that points to `edupage install-browsers`.
 
 ## Scenario Design
 

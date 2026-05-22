@@ -1,4 +1,5 @@
 from click.testing import CliRunner
+from playwright.sync_api import Error as PlaywrightError
 
 from edu_page_automat import cli as cli_module
 from edu_page_automat.cli import cli as main_cli
@@ -16,6 +17,51 @@ def test_cli_list_outputs_available_commands():
     print(result.output)
     assert result.exit_code == 0
     assert "createtask" in result.output
+
+
+def test_cli_install_browsers_invokes_playwright_install(monkeypatch):
+    """The browser installer command runs inside the active Python environment."""
+    runner = CliRunner()
+    called = {}
+
+    def fake_install_firefox_browser():
+        called["installed"] = True
+
+    monkeypatch.setattr(cli_module, "install_firefox_browser", fake_install_firefox_browser)
+
+    result = runner.invoke(main_cli, ["install-browsers"])
+
+    assert result.exit_code == 0
+    assert called == {"installed": True}
+    assert "Playwright Firefox browser installed." in result.output
+
+
+def test_cli_login_reports_missing_playwright_browser(monkeypatch):
+    """Missing Playwright browser binaries produce a readable CLI error."""
+    runner = CliRunner()
+
+    class DummySyncPlaywright:
+        def __enter__(self):
+            return object()
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+    def fake_setup_login(unused_playwright):
+        raise PlaywrightError(
+            "BrowserType.launch: Executable doesn't exist at /tmp/firefox\n"
+            "Please run the following command to download new browsers:\n"
+            "    playwright install"
+        )
+
+    monkeypatch.setattr(cli_module, "sync_playwright", lambda: DummySyncPlaywright())
+    monkeypatch.setattr(cli_module.setup_login, "run", fake_setup_login)
+
+    result = runner.invoke(main_cli, ["login"])
+
+    assert result.exit_code != 0
+    assert "Playwright Firefox browser binaries are not installed" in result.output
+    assert "edupage install-browsers" in result.output
 
 
 def test_cli_create_task_invokes_run_scenario(monkeypatch):
