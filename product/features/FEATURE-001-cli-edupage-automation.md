@@ -54,6 +54,8 @@ The `convert-classroom-grades` command converts Google Classroom grade exports i
 
 Use `--topic` or `--task` filters to keep only the Classroom rows that correspond to EduPage tasks intended for import.
 
+Empty Google Classroom point values are emitted as the EduPage `m` marker.
+
 ## Grade Diff
 
 The `diff-grades` command compares the current EduPage CSV export with a source-of-truth grade CSV and writes only non-empty changed target values in the `fill-grades` input format.

@@ -30,10 +30,10 @@ def _split_student_name(student_name: str, row_index: int) -> tuple[str, str]:
 
 
 def _normalize_points(points: str, row_index: int) -> str:
-    """Return an EduPage-compatible point value or an empty string."""
+    """Return an EduPage-compatible point value, using `m` for empty values."""
     normalized_points = points.strip()
     if not normalized_points:
-        return ""
+        return "m"
     if not normalized_points.isdecimal():
         raise ValueError(f"Row {row_index}: points must be a whole number or empty")
     return normalized_points
@@ -49,9 +49,8 @@ def convert_classroom_grades_csv(
     """Convert a Google Classroom grade export into a CSV accepted by `fill-grades`.
 
     Optional topic and task filters keep the conversion focused on the EduPage
-    tasks the teacher wants to import. Rows with empty points are preserved so
-    the generated file remains a complete review artifact; `fill-grades` skips
-    those rows before browser automation starts.
+    tasks the teacher wants to import. Rows with empty points are converted to
+    the EduPage `m` marker so they remain explicit fillable grade entries.
     """
     if not input_csv.exists():
         raise ValueError(f"CSV file {input_csv} does not exist")

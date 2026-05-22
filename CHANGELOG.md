@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## 0.9.3 - 2026-05-22
+
+### Changed
+
+- Changed `convert-classroom-grades` to output `m` for empty Google Classroom point values.
+
 ## 0.9.2 - 2026-05-22
 
 ### Added

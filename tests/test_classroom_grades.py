@@ -12,7 +12,7 @@ def read_rows(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
-def test_convert_classroom_grades_filters_topic_and_preserves_empty_points(tmp_path: Path) -> None:
+def test_convert_classroom_grades_filters_topic_and_marks_empty_points(tmp_path: Path) -> None:
     """Google Classroom rows become EduPage grade rows for the requested topic only."""
     input_csv = tmp_path / "classroom.csv"
     output_csv = tmp_path / "edupage.csv"
@@ -48,7 +48,7 @@ def test_convert_classroom_grades_filters_topic_and_preserves_empty_points(tmp_p
             "jmeno": "Stela",
             "prijmeni": "Bilová",
             "jmeno_ulohy": "Build an RPG Creature Search App Project",
-            "pocet_bodu": "",
+            "pocet_bodu": "m",
         },
         {
             "jmeno": "Hovorková",
