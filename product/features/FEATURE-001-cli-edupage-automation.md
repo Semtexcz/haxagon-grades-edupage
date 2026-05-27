@@ -6,7 +6,7 @@ The project provides a command line interface for authenticated EduPage automati
 
 ## Scope
 
-- Reuse a stored EduPage session when `auth.json` is valid.
+- Reuse a stored EduPage session when the user-level Playwright storage-state file is valid.
 - Perform a fresh login when the stored session is missing or invalid.
 - Register scenario commands through the `Scenario` base class.
 - Support the `create-task` scenario for creating tests or assignments from CLI options or CSV input.
@@ -33,6 +33,10 @@ The project provides a command line interface for authenticated EduPage automati
 The `install-browsers` command installs the Playwright Firefox browser for the same Python environment that runs `edupage`. This avoids pipx and Poetry environment mismatches.
 
 When Firefox browser binaries are missing, browser-backed commands should fail with actionable install guidance instead of a raw Playwright traceback.
+
+## Authentication Storage
+
+The CLI persists EduPage login globally for the current operating-system user instead of tying it to the shell's working directory. On Linux the default path is `~/.local/state/edu_page_automat/auth.json`; `EDUPAGE_AUTH_FILE` can point the CLI at another storage-state file when isolation is needed.
 
 ## CSV Grade Input
 

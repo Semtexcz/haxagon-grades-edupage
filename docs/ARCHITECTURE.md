@@ -9,8 +9,9 @@ EduPageAutomat is a Python CLI for running repeatable EduPage browser automation
 - `edu_page_automat.cli` owns the public command line interface and scenario registration.
 - `edu_page_automat.classroom_grades` owns offline CSV conversion from Google Classroom grade exports to EduPage grade input CSV files.
 - `edu_page_automat.grade_diff` owns offline CSV diffing between current EduPage exports and source-of-truth grade CSV files.
+- `edu_page_automat.auth_storage` owns the user-level Playwright storage-state path used for persisted EduPage login.
 - `edu_page_automat.auth_manager` owns session discovery, validation, and login fallback.
-- `edu_page_automat.setup_login` owns the interactive EduPage login flow and writes `auth.json`.
+- `edu_page_automat.setup_login` owns the interactive EduPage login flow and writes the persisted storage state.
 - `edu_page_automat.playwright_browsers` owns Playwright browser binary installation and missing-browser diagnostics.
 - `edu_page_automat.scenario_runner` owns Playwright lifecycle management and auto-wait wrappers.
 - `edu_page_automat.scenarios` contains user-facing automation scenarios. Scenario modules should not manage browser startup or session setup directly.
@@ -28,9 +29,11 @@ EduPageAutomat is a Python CLI for running repeatable EduPage browser automation
 
 ## Authentication Flow
 
-`AuthManager` first checks `auth.json`. If it exists, it opens a Firefox context with that storage state and visits the EduPage user page. If the resulting URL indicates a login page, the stored session is closed and `setup_login.run` performs a fresh login.
+`AuthManager` first checks the global storage-state file from `auth_storage`. By default this is stored outside the repository in the user's state/config directory, such as `~/.local/state/edu_page_automat/auth.json` on Linux. The `EDUPAGE_AUTH_FILE` environment variable can override the path for tests or manual isolation.
 
-`auth.json` is intentionally ignored by Git because it contains session state.
+If the storage-state file exists, `AuthManager` opens a Firefox context with that state and visits the EduPage user page. If the resulting URL indicates a login page, the stored session is closed and `setup_login.run` performs a fresh login into the same global path.
+
+Repository-local `auth.json` remains ignored by Git for legacy/manual use because it contains session state, but the CLI no longer writes it by default.
 
 ## Browser Installation Flow
 

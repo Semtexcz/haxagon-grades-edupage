@@ -6,13 +6,16 @@ from pathlib import Path
 
 from playwright.sync_api import Playwright, expect
 
+from edu_page_automat.auth_storage import get_auth_file_path
 from edu_page_automat.logging_config import setup_logging
 
-AUTH_FILE = Path("auth.json")
+AUTH_FILE = get_auth_file_path()
 logger = setup_logging()
 
-def run(playwright: Playwright, browser=None):
+
+def run(playwright: Playwright, browser=None, auth_file: Path | None = None):
     """Perform login and return an authenticated `(browser, context)` pair."""
+    storage_state_path = auth_file or AUTH_FILE
     base_url = os.environ.get("EDUPAGE_URL", "https://1itg.edupage.org/")
     username_value = os.environ.get("EDUPAGE_USERNAME")
     password_value = os.environ.get("EDUPAGE_PASSWORD")
@@ -55,8 +58,9 @@ def run(playwright: Playwright, browser=None):
     page.wait_for_url(f"{base_url}user/**")
     logger.info("Login completed: {}", page.url)
 
-    context.storage_state(path=str(AUTH_FILE))
-    logger.info("Session saved to {}", AUTH_FILE)
+    storage_state_path.parent.mkdir(parents=True, exist_ok=True)
+    context.storage_state(path=str(storage_state_path))
+    logger.info("Session saved to {}", storage_state_path)
 
     return browser, context
 

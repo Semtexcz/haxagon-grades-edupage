@@ -43,7 +43,7 @@ def login():
             if is_missing_browser_error(exc):
                 raise click.ClickException(missing_browser_message()) from exc
             raise
-        click.echo("Login complete, session saved.")
+        click.echo(f"Login complete, session saved to {setup_login.AUTH_FILE}.")
 
 
 @cli.command("install-browsers")

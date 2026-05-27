@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## 0.9.5 - 2026-05-27
+
+### Changed
+
+- Persisted EduPage login in a global user-level storage-state file instead of the current working directory.
+
 ## 0.9.4 - 2026-05-22
 
 ### Fixed

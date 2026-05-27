@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 from edu_page_automat import auth_manager as auth_module
+from edu_page_automat import auth_storage
 from edu_page_automat.auth_manager import AuthManager
 
 
@@ -122,9 +123,11 @@ def test_new_context_reuses_valid(monkeypatch):
     assert (browser, context) == ("browser", "context")
 
 
-def test_new_context_triggers_login(monkeypatch):
+def test_new_context_triggers_login(monkeypatch, tmp_path):
+    auth_file = tmp_path / "auth.json"
     playwright = DummyPlaywright("https://example.com")
     manager = AuthManager(playwright)
+    monkeypatch.setattr(auth_module, "AUTH_FILE", auth_file)
     monkeypatch.setattr(
         manager,
         "try_open_session",
@@ -133,8 +136,9 @@ def test_new_context_triggers_login(monkeypatch):
 
     captured = {}
 
-    def fake_setup_login(received_playwright):
+    def fake_setup_login(received_playwright, auth_file=None):
         captured["playwright"] = received_playwright
+        captured["auth_file"] = auth_file
         return "browser2", "context2"
 
     monkeypatch.setattr(auth_module, "setup_login", fake_setup_login)
@@ -142,4 +146,21 @@ def test_new_context_triggers_login(monkeypatch):
     browser, context = manager.new_context()
 
     assert captured["playwright"] is playwright
+    assert captured["auth_file"] == auth_file
     assert (browser, context) == ("browser2", "context2")
+
+
+def test_get_auth_file_path_uses_env_override(monkeypatch, tmp_path):
+    auth_file = tmp_path / "custom-auth.json"
+    monkeypatch.setenv(auth_storage.AUTH_FILE_ENV_VAR, str(auth_file))
+
+    assert auth_storage.get_auth_file_path() == auth_file
+
+
+def test_get_auth_file_path_uses_xdg_state_home(monkeypatch, tmp_path):
+    monkeypatch.delenv(auth_storage.AUTH_FILE_ENV_VAR, raising=False)
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    monkeypatch.setattr(auth_storage.os, "name", "posix")
+    monkeypatch.setattr(auth_storage.sys, "platform", "linux")
+
+    assert auth_storage.get_auth_file_path() == tmp_path / "edu_page_automat" / "auth.json"

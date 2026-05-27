@@ -1,13 +1,12 @@
 """Session management for EduPage Playwright contexts."""
 
-from pathlib import Path
-
 from playwright.sync_api import Playwright
 
-from edu_page_automat.setup_login import run as setup_login
+from edu_page_automat.auth_storage import get_auth_file_path
 from edu_page_automat.logging_config import setup_logging
+from edu_page_automat.setup_login import run as setup_login
 
-AUTH_FILE = Path("auth.json")
+AUTH_FILE = get_auth_file_path()
 logger = setup_logging()
 
 class AuthManager:
@@ -50,4 +49,4 @@ class AuthManager:
             return browser, context
 
         logger.info("Session missing or invalid, performing login")
-        return setup_login(self.playwright)
+        return setup_login(self.playwright, auth_file=AUTH_FILE)
