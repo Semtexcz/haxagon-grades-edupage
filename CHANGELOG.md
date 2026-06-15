@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## 0.9.10 - 2026-06-15
+
+### Fixed
+
+- Normalized EduPage export grade displays like `m · 20` and `15 · 20` so `export-grades` and `diff-grades` keep using fill-compatible point values.
+
 ## 0.9.9 - 2026-06-15
 
 ### Fixed

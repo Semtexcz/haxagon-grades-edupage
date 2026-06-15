@@ -50,7 +50,7 @@ By default, `fill-grades` refuses to replace non-empty grade cells. Use `--overw
 
 The `export-grades` command writes a CSV with `first_name`, `last_name`, `task_category`, `task_name`, and `points` columns. It exports all visible student/task cells from the selected class and subject grade table, including empty cells with an empty `points` value.
 
-The exported CSV keeps task categories from EduPage headers such as `Dan - Frontend`. The remaining required headers are compatible with `fill-grades`, so the file can be reviewed, edited, and used later as grade input.
+The exported CSV keeps task categories from EduPage headers such as `Dan - Frontend`. When EduPage shows grades in a display form like `m · 20` or `15 · 20`, the export writes only the fill-compatible leading value. The remaining required headers are compatible with `fill-grades`, so the file can be reviewed, edited, and used later as grade input.
 
 ## Google Classroom Grade Conversion
 
@@ -66,4 +66,4 @@ Empty Google Classroom point values are emitted as the EduPage `m` marker.
 
 The `diff-grades` command compares the current EduPage CSV export with a source-of-truth grade CSV and writes only non-empty changed target values in the `fill-grades` input format. The source-of-truth file can be either an EduPage-style grade CSV or a raw Google Classroom export.
 
-Rows with empty EduPage-style source-of-truth points are counted but not emitted because they cannot be represented as a fill operation. Empty raw Google Classroom point values are emitted as `m`. Rows missing from the current EduPage export are counted as review items instead of being emitted.
+Rows with empty EduPage-style source-of-truth points are counted but not emitted because they cannot be represented as a fill operation. Empty raw Google Classroom point values are emitted as `m`. EduPage-style CSV inputs also accept the export display form `value · max` and normalize it to the leading fill-compatible value. Rows missing from the current EduPage export are counted as review items instead of being emitted.

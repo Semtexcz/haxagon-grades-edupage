@@ -3,6 +3,7 @@
 import csv
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Annotated, List
 
 import typer
@@ -17,6 +18,7 @@ _GRADE_PAGE_URL = "https://1itg.edupage.org/user/"
 _TASK_HEADER_LOCATOR = ".znamkyUdalostHeader"
 _STUDENT_LINK_SELECTOR = 'a[href*="studentid="]'
 _CSV_HEADERS = ["first_name", "last_name", "task_category", "task_name", "points"]
+_POINTS_WITH_MAX_PATTERN = re.compile(r"^(?P<value>m|\d+)\s*[·•]\s*\d+$", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -53,6 +55,21 @@ def _write_grade_rows_to_csv(csv_path: Path, rows: list[GradeExportRow]) -> None
                     "points": row.points,
                 }
             )
+
+
+def _normalize_exported_points(points: str) -> str:
+    """Normalize EduPage grade-cell text into `fill-grades`-compatible values."""
+    normalized_points = " ".join(points.split())
+    if not normalized_points:
+        return ""
+    if normalized_points.casefold() == "m":
+        return "m"
+    if normalized_points.isdecimal():
+        return normalized_points
+    points_with_max_match = _POINTS_WITH_MAX_PATTERN.fullmatch(normalized_points)
+    if points_with_max_match:
+        return points_with_max_match.group("value").casefold()
+    return normalized_points
 
 
 class ExportGradesScenario(Scenario):
@@ -163,7 +180,7 @@ class ExportGradesScenario(Scenario):
                     last_name=last_name,
                     task_category=raw_row["taskCategory"],
                     task_name=raw_row["taskName"],
-                    points=raw_row["points"],
+                    points=_normalize_exported_points(raw_row["points"]),
                 )
             )
 

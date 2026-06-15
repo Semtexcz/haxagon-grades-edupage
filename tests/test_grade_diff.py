@@ -78,6 +78,20 @@ def test_write_grade_diff_accepts_m_as_target_value(tmp_path: Path) -> None:
     assert read_rows(output_csv)[0]["pocet_bodu"] == "m"
 
 
+def test_write_grade_diff_accepts_exported_points_with_max_suffix(tmp_path: Path) -> None:
+    """Existing EduPage exports with visible max-points suffixes remain diffable."""
+    current_csv = tmp_path / "current.csv"
+    truth_csv = tmp_path / "truth.csv"
+    output_csv = tmp_path / "diff.csv"
+    current_csv.write_text("first_name,last_name,task_name,points\nAda,Lovelace,Task,m · 20\n", encoding="utf-8")
+    truth_csv.write_text("jmeno,prijmeni,jmeno_ulohy,pocet_bodu\nAda,Lovelace,Task,100\n", encoding="utf-8")
+
+    summary = write_grade_diff_csv(current_csv, truth_csv, output_csv)
+
+    assert summary.written_rows == 1
+    assert read_rows(output_csv)[0]["pocet_bodu"] == "100"
+
+
 def test_write_grade_diff_accepts_raw_classroom_truth_csv(tmp_path: Path) -> None:
     """Raw Google Classroom exports can be used directly as source-of-truth CSVs."""
     current_csv = tmp_path / "current.csv"

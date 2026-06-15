@@ -6,6 +6,7 @@ import pytest
 from edu_page_automat.scenarios.export_grades import (
     ExportGradesScenario,
     GradeExportRow,
+    _normalize_exported_points,
     _split_student_display_name,
     _write_grade_rows_to_csv,
 )
@@ -38,6 +39,12 @@ def test_write_grade_rows_to_csv(tmp_path: Path) -> None:
     )
 
 
+def test_normalize_exported_points_discards_edupage_max_points_suffix() -> None:
+    """EduPage composite grade displays are reduced to fill-compatible point values."""
+    assert _normalize_exported_points("m · 20") == "m"
+    assert _normalize_exported_points("15 · 20") == "15"
+
+
 def test_extract_grade_rows_maps_page_payload() -> None:
     """Browser-extracted student/task grade cells become typed export rows."""
     scenario = ExportGradesScenario(class_="2.png", output_csv=Path("grades.csv"))
@@ -53,7 +60,7 @@ def test_extract_grade_rows_maps_page_payload() -> None:
             "studentName": "Lovelace, Ada",
             "taskCategory": "Dan - Frontend",
             "taskName": "Build an App",
-            "points": "",
+            "points": "m · 20",
         },
     ]
 
@@ -62,7 +69,7 @@ def test_extract_grade_rows_maps_page_payload() -> None:
     page.wait_for_selector.assert_called_once_with('a[href*="studentid="]', state="attached", timeout=10000)
     assert rows == [
         GradeExportRow("Žofie", "Žužlavá", "Dan - Frontend", "Build an App", "100"),
-        GradeExportRow("Ada", "Lovelace", "Dan - Frontend", "Build an App", ""),
+        GradeExportRow("Ada", "Lovelace", "Dan - Frontend", "Build an App", "m"),
     ]
 
 

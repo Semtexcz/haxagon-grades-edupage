@@ -3,10 +3,12 @@
 import csv
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Sequence, TextIO
 
 EDUPAGE_DIFF_HEADERS = ["jmeno", "prijmeni", "jmeno_ulohy", "pocet_bodu"]
 _CSV_SAMPLE_SIZE = 2048
+_POINTS_WITH_MAX_PATTERN = re.compile(r"^(?P<value>m|\d+)\s*[·•]\s*\d+$", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -79,6 +81,9 @@ def _normalize_points(points: str, row_index: int, *, empty_value: str = "") -> 
         return "m"
     if normalized_points.isdecimal():
         return normalized_points
+    points_with_max_match = _POINTS_WITH_MAX_PATTERN.fullmatch(normalized_points)
+    if points_with_max_match:
+        return points_with_max_match.group("value").casefold()
     raise ValueError(f"Row {row_index}: points must be a whole number, m, or empty")
 
 

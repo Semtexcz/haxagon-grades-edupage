@@ -64,7 +64,7 @@ The scenario assumes tasks already exist in EduPage. Task creation remains the r
 
 `ExportGradesScenario` selects the target course, opens the Známky module, reads all visible task headers from `.znamkyUdalostHeader`, and walks each visible student row in the grade table. It exports one CSV row for each visible student/task grade cell using the headers `first_name`, `last_name`, `task_category`, `task_name`, and `points`.
 
-The export is a snapshot of the currently visible EduPage table. Empty grade cells are included with an empty `points` value so the CSV can be reviewed or reused as compatible input for `fill-grades`.
+The export is a snapshot of the currently visible EduPage table. Empty grade cells are included with an empty `points` value so the CSV can be reviewed or reused as compatible input for `fill-grades`. When EduPage displays a composite value such as `m · 20` or `15 · 20`, the export keeps only the fill-compatible leading value (`m` or `15`).
 
 ## Google Classroom Grade Conversion
 
@@ -76,7 +76,7 @@ The converter writes empty `Points earned` values as the EduPage `m` marker. Who
 
 The `diff-grades` CLI command runs offline and does not use the scenario runner or Playwright. It compares a current EduPage grade export with a source-of-truth grade CSV by first name, last name, and task name, then writes only rows where the source-of-truth value is non-empty and differs from the current EduPage value. The source-of-truth CSV may already use EduPage-style grade headers, or it may be a raw Google Classroom export with `Student`, `Task`, and `Points earned` columns.
 
-The generated diff uses the `fill-grades` Czech headers `jmeno`, `prijmeni`, `jmeno_ulohy`, and `pocet_bodu`. Empty raw Google Classroom source values are normalized to the EduPage `m` marker. Empty EduPage-style source-of-truth values are reported in the CLI summary but not written because `fill-grades` deliberately skips empty grades and cannot clear an existing EduPage value. Rows that are missing from the current EduPage export are also reported instead of written, because they usually indicate a visibility, task, or name-matching problem that should be reviewed before browser automation.
+The generated diff uses the `fill-grades` Czech headers `jmeno`, `prijmeni`, `jmeno_ulohy`, and `pocet_bodu`. Empty raw Google Classroom source values are normalized to the EduPage `m` marker. EduPage-style CSV inputs also accept the export display form `value · max`, normalizing it back to the leading fill-compatible value. Empty EduPage-style source-of-truth values are reported in the CLI summary but not written because `fill-grades` deliberately skips empty grades and cannot clear an existing EduPage value. Rows that are missing from the current EduPage export are also reported instead of written, because they usually indicate a visibility, task, or name-matching problem that should be reviewed before browser automation.
 
 ## Test Strategy Boundary
 
