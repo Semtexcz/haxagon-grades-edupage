@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from edu_page_automat import scenario_runner as sr
 
@@ -43,6 +44,24 @@ class DummyPage:
 def test_auto_wait_locator_waits_and_wraps(monkeypatch):
     monkeypatch.setattr(sr, "Locator", DummyLocator)
     locator = DummyLocator()
+    auto = sr.AutoWaitLocator(locator, timeout=123)
+
+    result = auto.click()
+
+    assert locator.wait_calls == [{"state": "visible", "timeout": 123}]
+    assert locator.click_calls == [((), {})]
+    assert isinstance(result, sr.AutoWaitLocator)
+
+
+def test_auto_wait_locator_falls_back_to_playwright_action_auto_wait(monkeypatch):
+    monkeypatch.setattr(sr, "Locator", DummyLocator)
+
+    class TimeoutLocator(DummyLocator):
+        def wait_for(self, **kwargs):
+            self.wait_calls.append(kwargs)
+            raise PlaywrightTimeoutError("not visible yet")
+
+    locator = TimeoutLocator()
     auto = sr.AutoWaitLocator(locator, timeout=123)
 
     result = auto.click()

@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import FrameLocator, Locator, Page, sync_playwright
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from edu_page_automat.auth_manager import AuthManager
 from edu_page_automat.logging_config import setup_logging
@@ -25,12 +26,14 @@ _AUTO_WAIT_ACTION_STATES = {
     "type": "attached",
     "uncheck": "visible",
 }
+_PLAYWRIGHT_AUTO_WAIT_ACTIONS = {"check", "click", "dblclick", "fill", "hover", "tap", "uncheck"}
 
 logger = setup_logging()
 
 
 class ScenarioRunnerError(RuntimeError):
     """User-facing scenario runner error that should be rendered by the CLI."""
+
 
 def _wrap_result(result: Any, timeout: Optional[float]):
     """Wrap Playwright locator-like return values with auto-wait proxies."""
@@ -65,7 +68,17 @@ class AutoWaitLocator:
                 state = _AUTO_WAIT_ACTION_STATES.get(item)
                 if state:
                     logger.debug("Waiting for locator {} before {}", locator, item)
-                    locator.wait_for(state=state, timeout=object.__getattribute__(self, "_timeout"))
+                    try:
+                        locator.wait_for(state=state, timeout=object.__getattribute__(self, "_timeout"))
+                    except PlaywrightTimeoutError:
+                        if item not in _PLAYWRIGHT_AUTO_WAIT_ACTIONS:
+                            raise
+                        logger.debug(
+                            "Locator {} did not satisfy explicit {} wait before {}; using Playwright action auto-wait",
+                            locator,
+                            state,
+                            item,
+                        )
                 result = attr(*args, **kwargs)
                 return _wrap_result(result, object.__getattribute__(self, "_timeout"))
             return wrapper

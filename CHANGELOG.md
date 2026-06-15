@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## 0.9.7 - 2026-06-15
+
+### Fixed
+
+- Stopped the scenario auto-wait wrapper from blocking Playwright click actions when an explicit pre-wait times out on filtered locators.
+
 ## 0.9.6 - 2026-06-15
 
 ### Changed
