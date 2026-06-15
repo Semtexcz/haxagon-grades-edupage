@@ -255,14 +255,17 @@ def test_cli_diff_grades_invokes_diff_writer(monkeypatch, tmp_path):
     current_csv.write_text("first_name,last_name,task_name,points\nAda,Lovelace,Task,m\n", encoding="utf-8")
     truth_csv.write_text("jmeno,prijmeni,jmeno_ulohy,pocet_bodu\nAda,Lovelace,Task,100\n", encoding="utf-8")
 
-    def fake_write_grade_diff_csv(current_path, truth_path, output_path):
+    def fake_write_grade_diff_csv(current_path, truth_path, output_path, *, keep_better_current=False, kept_current_report_csv=None):
         captured["current_path"] = current_path
         captured["truth_path"] = truth_path
         captured["output_path"] = output_path
+        captured["keep_better_current"] = keep_better_current
+        captured["kept_current_report_csv"] = kept_current_report_csv
         return GradeDiffSummary(
             written_rows=1,
             equal_rows=2,
             skipped_empty_target_rows=3,
+            kept_better_current_rows=0,
             missing_current_rows=4,
             extra_current_rows=5,
         )
@@ -287,9 +290,65 @@ def test_cli_diff_grades_invokes_diff_writer(monkeypatch, tmp_path):
         "current_path": current_csv,
         "truth_path": truth_csv,
         "output_path": output_csv,
+        "keep_better_current": False,
+        "kept_current_report_csv": None,
     }
     assert f"Wrote 1 grade rows to {output_csv}" in result.output
     assert "equal=2" in result.output
     assert "empty-target=3" in result.output
+    assert "kept-better-current=0" in result.output
     assert "missing-current=4" in result.output
     assert "extra-current=5" in result.output
+
+
+def test_cli_diff_grades_enables_keep_better_current_and_reports_path(monkeypatch, tmp_path):
+    """The diff CLI forwards the keep-better-current option and reports the default CSV path."""
+    runner = CliRunner()
+    captured = {}
+    current_csv = tmp_path / "current.csv"
+    truth_csv = tmp_path / "truth.csv"
+    output_csv = tmp_path / "diff.csv"
+    current_csv.write_text("first_name,last_name,task_name,points\nAda,Lovelace,Task,m\n", encoding="utf-8")
+    truth_csv.write_text("jmeno,prijmeni,jmeno_ulohy,pocet_bodu\nAda,Lovelace,Task,100\n", encoding="utf-8")
+
+    def fake_write_grade_diff_csv(current_path, truth_path, output_path, *, keep_better_current=False, kept_current_report_csv=None):
+        captured["current_path"] = current_path
+        captured["truth_path"] = truth_path
+        captured["output_path"] = output_path
+        captured["keep_better_current"] = keep_better_current
+        captured["kept_current_report_csv"] = kept_current_report_csv
+        return GradeDiffSummary(
+            written_rows=1,
+            equal_rows=0,
+            skipped_empty_target_rows=0,
+            kept_better_current_rows=2,
+            missing_current_rows=0,
+            extra_current_rows=0,
+        )
+
+    monkeypatch.setattr(cli_module, "write_grade_diff_csv", fake_write_grade_diff_csv)
+
+    result = runner.invoke(
+        main_cli,
+        [
+            "diff-grades",
+            "--current-csv",
+            str(current_csv),
+            "--truth-csv",
+            str(truth_csv),
+            "--output-csv",
+            str(output_csv),
+            "--keep-better-current",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert captured == {
+        "current_path": current_csv,
+        "truth_path": truth_csv,
+        "output_path": output_csv,
+        "keep_better_current": True,
+        "kept_current_report_csv": None,
+    }
+    assert "kept-better-current=2" in result.output
+    assert f"kept-current-report={output_csv.with_name('diff-kept-current.csv')}" in result.output

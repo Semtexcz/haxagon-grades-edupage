@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## 0.10.0 - 2026-06-15
+
+### Added
+
+- Added `diff-grades --keep-better-current` to preserve higher current EduPage grades, treating `m` as `0`, and write a `*-kept-current.csv` report for skipped replacements.
+
 ## 0.9.10 - 2026-06-15
 
 ### Fixed

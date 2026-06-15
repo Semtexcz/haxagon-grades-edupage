@@ -9,7 +9,7 @@ import typer
 
 from edu_page_automat import setup_login
 from edu_page_automat.classroom_grades import convert_classroom_grades_csv
-from edu_page_automat.grade_diff import write_grade_diff_csv
+from edu_page_automat.grade_diff import _default_report_path, write_grade_diff_csv
 from edu_page_automat.logging_config import setup_logging
 from edu_page_automat.playwright_browsers import (
     install_firefox_browser,
@@ -137,16 +137,32 @@ def diff_grades(
             help="Path where the fill-grades diff CSV should be written.",
         ),
     ],
+    keep_better_current: Annotated[
+        bool,
+        typer.Option(
+            "--keep-better-current",
+            help="Keep the current EduPage grade when it is higher than the source-of-truth grade. `m` counts as 0.",
+        ),
+    ] = False,
 ):
     """Write only grade rows that need to be saved to EduPage."""
     try:
-        summary = write_grade_diff_csv(current_csv, truth_csv, output_csv)
+        summary = write_grade_diff_csv(
+            current_csv,
+            truth_csv,
+            output_csv,
+            keep_better_current=keep_better_current,
+        )
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
+    report_suffix = ""
+    if keep_better_current:
+        report_suffix = f", kept-current-report={_default_report_path(output_csv)}"
     typer.echo(
         f"Wrote {summary.written_rows} grade rows to {output_csv} "
         f"(equal={summary.equal_rows}, empty-target={summary.skipped_empty_target_rows}, "
-        f"missing-current={summary.missing_current_rows}, extra-current={summary.extra_current_rows})"
+        f"kept-better-current={summary.kept_better_current_rows}, "
+        f"missing-current={summary.missing_current_rows}, extra-current={summary.extra_current_rows}{report_suffix})"
     )
 
 for scenario_cls in SCENARIOS:

@@ -7,6 +7,13 @@ import re
 from typing import Sequence, TextIO
 
 EDUPAGE_DIFF_HEADERS = ["jmeno", "prijmeni", "jmeno_ulohy", "pocet_bodu"]
+KEPT_CURRENT_REPORT_HEADERS = [
+    "jmeno",
+    "prijmeni",
+    "jmeno_ulohy",
+    "soucasny_pocet_bodu",
+    "pozadovany_pocet_bodu",
+]
 _CSV_SAMPLE_SIZE = 2048
 _POINTS_WITH_MAX_PATTERN = re.compile(r"^(?P<value>m|\d+)\s*[·•]\s*\d+$", re.IGNORECASE)
 
@@ -42,8 +49,30 @@ class GradeDiffSummary:
     written_rows: int
     equal_rows: int
     skipped_empty_target_rows: int
+    kept_better_current_rows: int
     missing_current_rows: int
     extra_current_rows: int
+
+
+@dataclass(frozen=True)
+class KeptCurrentGradeRow:
+    """Row describing a better current EduPage grade that was preserved."""
+
+    first_name: str
+    last_name: str
+    task_name: str
+    current_points: str
+    truth_points: str
+
+    def as_report_row(self) -> dict[str, str]:
+        """Return the row in the CSV shape used by the kept-current report."""
+        return {
+            "jmeno": self.first_name,
+            "prijmeni": self.last_name,
+            "jmeno_ulohy": self.task_name,
+            "soucasny_pocet_bodu": self.current_points,
+            "pozadovany_pocet_bodu": self.truth_points,
+        }
 
 
 def _normalize_header(header: str) -> str:
@@ -96,6 +125,28 @@ def _csv_reader(handle: TextIO) -> csv.DictReader:
     except (csv.Error, TypeError):
         dialect = csv.excel
     return csv.DictReader(handle, dialect=dialect)
+
+
+def _points_to_score(points: str) -> int:
+    """Convert a normalized grade value to a comparable numeric score."""
+    if points == "m":
+        return 0
+    return int(points)
+
+
+def _default_report_path(output_csv: Path) -> Path:
+    """Return the default report path used for preserved better current grades."""
+    return output_csv.with_name(f"{output_csv.stem}-kept-current{output_csv.suffix}")
+
+
+def _write_kept_current_report(report_path: Path, rows: list[KeptCurrentGradeRow]) -> None:
+    """Write the kept-current grade report CSV."""
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    with report_path.open("w", encoding="utf-8", newline="") as report_handle:
+        writer = csv.DictWriter(report_handle, fieldnames=KEPT_CURRENT_REPORT_HEADERS, lineterminator="\n")
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row.as_report_row())
 
 
 def _validate_unique_row(grade_row: GradeRow, row_index: int, seen_keys: set[tuple[str, str, str]]) -> None:
@@ -189,7 +240,14 @@ def _load_grade_rows(csv_path: Path) -> list[GradeRow]:
     return rows
 
 
-def write_grade_diff_csv(current_csv: Path, truth_csv: Path, output_csv: Path) -> GradeDiffSummary:
+def write_grade_diff_csv(
+    current_csv: Path,
+    truth_csv: Path,
+    output_csv: Path,
+    *,
+    keep_better_current: bool = False,
+    kept_current_report_csv: Path | None = None,
+) -> GradeDiffSummary:
     """Write rows whose truth grade should be saved to EduPage.
 
     The generated CSV contains only rows present in both files where the source
@@ -205,7 +263,9 @@ def write_grade_diff_csv(current_csv: Path, truth_csv: Path, output_csv: Path) -
     written_rows = 0
     equal_rows = 0
     skipped_empty_target_rows = 0
+    kept_better_current_rows = 0
     missing_current_rows = 0
+    kept_current_rows: list[KeptCurrentGradeRow] = []
 
     with output_csv.open("w", encoding="utf-8", newline="") as output_handle:
         writer = csv.DictWriter(output_handle, fieldnames=EDUPAGE_DIFF_HEADERS, lineterminator="\n")
@@ -222,14 +282,30 @@ def write_grade_diff_csv(current_csv: Path, truth_csv: Path, output_csv: Path) -
             if current_row.points == truth_row.points:
                 equal_rows += 1
                 continue
+            if keep_better_current and _points_to_score(current_row.points) > _points_to_score(truth_row.points):
+                kept_better_current_rows += 1
+                kept_current_rows.append(
+                    KeptCurrentGradeRow(
+                        first_name=truth_row.first_name,
+                        last_name=truth_row.last_name,
+                        task_name=truth_row.task_name,
+                        current_points=current_row.points,
+                        truth_points=truth_row.points,
+                    )
+                )
+                continue
 
             writer.writerow(truth_row.as_edupage_row())
             written_rows += 1
+
+    if keep_better_current:
+        _write_kept_current_report(kept_current_report_csv or _default_report_path(output_csv), kept_current_rows)
 
     return GradeDiffSummary(
         written_rows=written_rows,
         equal_rows=equal_rows,
         skipped_empty_target_rows=skipped_empty_target_rows,
+        kept_better_current_rows=kept_better_current_rows,
         missing_current_rows=missing_current_rows,
         extra_current_rows=len({row.key for row in current_rows} - truth_keys),
     )
