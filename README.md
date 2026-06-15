@@ -5,8 +5,8 @@ EduPageAutomat is a Python CLI for repeatable EduPage browser automation built o
 ## Capabilities
 
 - Automates EduPage with Playwright Firefox.
-- Provides a `click` based CLI through the `edupage` command.
-- Stores local session state in `auth.json` after login.
+- Provides a `typer` based CLI through the `edupage` command.
+- Stores login session state in the user-level Playwright auth file after login.
 - Logs through `loguru`; set `HAXAGON_LOG_LEVEL` to change verbosity.
 - Keeps scenario implementations under `src/edu_page_automat/scenarios/`.
 
@@ -46,7 +46,7 @@ export EDUPAGE_URL="https://school.edupage.org/"
 
 `EDUPAGE_URL` is optional and defaults to `https://1itg.edupage.org/`.
 
-The login flow writes `auth.json` in the repository root. This file contains session state and is ignored by Git.
+The login flow writes the Playwright storage state to the user-level path described in `docs/ARCHITECTURE.md`. Set `EDUPAGE_AUTH_FILE` to override it for manual isolation or tests.
 
 ## CLI Usage
 

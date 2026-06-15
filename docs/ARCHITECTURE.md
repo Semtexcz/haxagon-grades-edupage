@@ -6,7 +6,7 @@ EduPageAutomat is a Python CLI for running repeatable EduPage browser automation
 
 ## Module Boundaries
 
-- `edu_page_automat.cli` owns the public command line interface and scenario registration.
+- `edu_page_automat.cli` owns the public Typer command line interface and scenario registration.
 - `edu_page_automat.classroom_grades` owns offline CSV conversion from Google Classroom grade exports to EduPage grade input CSV files.
 - `edu_page_automat.grade_diff` owns offline CSV diffing between current EduPage exports and source-of-truth grade CSV files.
 - `edu_page_automat.auth_storage` owns the user-level Playwright storage-state path used for persisted EduPage login.

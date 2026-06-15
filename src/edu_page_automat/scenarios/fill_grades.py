@@ -3,12 +3,12 @@
 import csv
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, TypeAlias
+from typing import Annotated, Iterable, List, TypeAlias
 
-import click
+import typer
 
 from edu_page_automat.logging_config import setup_logging
-from edu_page_automat.scenario_runner import run_scenario
+from edu_page_automat.scenario_runner import ScenarioRunnerError, run_scenario
 from edu_page_automat.scenarios.base import Scenario
 
 logger = setup_logging()
@@ -349,40 +349,59 @@ class FillGradesScenario(Scenario):
 
     @classmethod
     def register_cli(cls, cli_group):
-        """Register the `fill-grades` command on the provided Click group."""
+        """Register the `fill-grades` command on the provided Typer app."""
 
         @cli_group.command("fill-grades")
-        @click.option("--class", "class_", required=True, help="Class name (e.g., 2.png)")
-        @click.option(
-            "--grades-csv",
-            "grades_csv",
-            type=click.Path(path_type=Path, exists=True, dir_okay=False),
-            required=True,
-            help="Path to CSV file with first name, last name, task name, and points columns.",
-        )
-        @click.option("--subject", "subject", default="Informatika", show_default=True, help="Subject name in EduPage course list")
-        @click.option("--period", "period", default="P2", show_default=True, help="EduPage grading period used in grade input names")
-        @click.option("--dry-run", "dry_run", is_flag=True, help="Fill fields but do not click the save button")
-        @click.option(
-            "--overwrite-existing",
-            "overwrite_existing",
-            is_flag=True,
-            help="Replace existing grade values instead of failing when a grade is already present.",
-        )
-        def run_fill_grades(class_, grades_csv, subject, period, dry_run, overwrite_existing):
+        def run_fill_grades(
+            class_: Annotated[str, typer.Option(..., "--class", help="Class name (e.g., 2.png)")],
+            grades_csv: Annotated[
+                Path,
+                typer.Option(
+                    ...,
+                    "--grades-csv",
+                    exists=True,
+                    file_okay=True,
+                    dir_okay=False,
+                    help="Path to CSV file with first name, last name, task name, and points columns.",
+                ),
+            ],
+            subject: Annotated[
+                str,
+                typer.Option("--subject", help="Subject name in EduPage course list", show_default=True),
+            ] = "Informatika",
+            period: Annotated[
+                str,
+                typer.Option("--period", help="EduPage grading period used in grade input names", show_default=True),
+            ] = "P2",
+            dry_run: Annotated[
+                bool,
+                typer.Option("--dry-run", help="Fill fields but do not click the save button"),
+            ] = False,
+            overwrite_existing: Annotated[
+                bool,
+                typer.Option(
+                    "--overwrite-existing",
+                    help="Replace existing grade values instead of failing when a grade is already present.",
+                ),
+            ] = False,
+        ):
             """Fill EduPage grade points from CSV rows."""
             try:
                 entries = _load_grade_entries_from_csv(grades_csv)
             except ValueError as exc:
-                raise click.BadParameter(str(exc)) from exc
+                raise typer.BadParameter(str(exc)) from exc
 
-            run_scenario(
-                lambda: cls(
-                    class_,
-                    entries,
-                    subject=subject,
-                    period=period,
-                    save=not dry_run,
-                    overwrite_existing=overwrite_existing,
+            try:
+                run_scenario(
+                    lambda: cls(
+                        class_,
+                        entries,
+                        subject=subject,
+                        period=period,
+                        save=not dry_run,
+                        overwrite_existing=overwrite_existing,
+                    )
                 )
-            )
+            except ScenarioRunnerError as exc:
+                typer.echo(str(exc), err=True)
+                raise typer.Exit(code=1) from exc

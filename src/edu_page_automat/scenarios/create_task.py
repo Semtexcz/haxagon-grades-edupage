@@ -3,13 +3,13 @@
 import csv
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List
+from typing import Annotated, Iterable, List
 
-import click
+import typer
 
-from edu_page_automat.scenario_runner import run_scenario
-from edu_page_automat.scenarios.base import Scenario
 from edu_page_automat.logging_config import setup_logging
+from edu_page_automat.scenario_runner import ScenarioRunnerError, run_scenario
+from edu_page_automat.scenarios.base import Scenario
 
 logger = setup_logging()
 
@@ -202,31 +202,38 @@ class CreateTaskScenario(Scenario):
 
     @classmethod
     def register_cli(cls, cli_group):
-        """Register the `create-task` command on the provided Click group."""
+        """Register the `create-task` command on the provided Typer app."""
         @cli_group.command("create-task")
-        @click.option("--class", "class_", required=True, help="Class name (e.g., 3.gpu)")
-        @click.option("--name", "task_name", required=False, help="Task name (use with --points)")
-        @click.option("--points", "task_points", type=int, required=False, help="Task points (use with --name)")
-        @click.option(
-            "--task",
-            "task_defs",
-            multiple=True,
-            help="Task definition in format 'name:points'. Repeat for multiple entries.",
-        )
-        @click.option(
-            "--task-csv",
-            "task_csv",
-            type=click.Path(path_type=Path, exists=True, dir_okay=False),
-            help="Path to CSV file with columns 'name' and 'points'",
-        )
-        @click.option("--subject", "subject", default="Informatika", show_default=True, help="Subject name in EduPage course list")
-        @click.option(
-            "--category",
-            "category",
-            required=False,
-            help="Dropdown label for task category (e.g., 'Dan - Linux' or 'Písemka')",
-        )
-        def run_task(class_, task_name, task_points, task_defs, task_csv, subject, category):
+        def run_task(
+            class_: Annotated[str, typer.Option(..., "--class", help="Class name (e.g., 3.gpu)")],
+            task_name: Annotated[str | None, typer.Option("--name", help="Task name (use with --points)")] = None,
+            task_points: Annotated[int | None, typer.Option("--points", help="Task points (use with --name)")] = None,
+            task_defs: Annotated[
+                list[str] | None,
+                typer.Option("--task", help="Task definition in format 'name:points'. Repeat for multiple entries."),
+            ] = None,
+            task_csv: Annotated[
+                Path | None,
+                typer.Option(
+                    "--task-csv",
+                    exists=True,
+                    file_okay=True,
+                    dir_okay=False,
+                    help="Path to CSV file with columns 'name' and 'points'",
+                ),
+            ] = None,
+            subject: Annotated[
+                str,
+                typer.Option("--subject", help="Subject name in EduPage course list", show_default=True),
+            ] = "Informatika",
+            category: Annotated[
+                str | None,
+                typer.Option(
+                    "--category",
+                    help="Dropdown label for task category (e.g., 'Dan - Linux' or 'Písemka')",
+                ),
+            ] = None,
+        ):
             """Create a new test/task in EduPage."""
             tasks: List[TaskDefinition] = []
 
@@ -234,7 +241,7 @@ class CreateTaskScenario(Scenario):
                 try:
                     tasks.extend(_load_tasks_from_csv(task_csv))
                 except ValueError as exc:
-                    raise click.BadParameter(str(exc)) from exc
+                    raise typer.BadParameter(str(exc)) from exc
 
             if task_defs:
                 for definition in task_defs:
@@ -242,19 +249,23 @@ class CreateTaskScenario(Scenario):
                         name_part, points_part = definition.split(":", 1)
                         task = TaskDefinition(name=name_part.strip(), points=int(points_part.strip()))
                     except ValueError as exc:
-                        raise click.BadParameter(
+                        raise typer.BadParameter(
                             "Each --task must be in format 'name:points' with integer points."
                         ) from exc
                     tasks.append(task)
 
             if not tasks:
                 if not task_name or task_points is None:
-                    raise click.BadParameter(
+                    raise typer.BadParameter(
                         "Provide tasks via --task-csv/--task or supply both --name and --points."
                     )
                 tasks.append(TaskDefinition(name=task_name, points=task_points))
 
-            run_scenario(lambda: cls(class_, tasks, subject=subject, category=category))
+            try:
+                run_scenario(lambda: cls(class_, tasks, subject=subject, category=category))
+            except ScenarioRunnerError as exc:
+                typer.echo(str(exc), err=True)
+                raise typer.Exit(code=1) from exc
 
 if __name__ == "__main__":
     # jednoduchý test bez CLI

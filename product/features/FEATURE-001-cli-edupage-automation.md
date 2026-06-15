@@ -25,7 +25,7 @@ The project provides a command line interface for authenticated EduPage automati
 ## Integration Points
 
 - EduPage website through Playwright Firefox.
-- `click` for CLI commands and validation.
+- `typer` for CLI commands and validation.
 - `loguru` for console logging.
 
 ## Browser Installation

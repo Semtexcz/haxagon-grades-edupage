@@ -1,5 +1,5 @@
-from click.testing import CliRunner
 from playwright.sync_api import Error as PlaywrightError
+from typer.testing import CliRunner
 
 from edu_page_automat import cli as cli_module
 from edu_page_automat.cli import cli as main_cli

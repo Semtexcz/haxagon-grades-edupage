@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here.
 
+## 0.9.6 - 2026-06-15
+
+### Changed
+
+- Migrated the `edupage` command-line app from Click to Typer while keeping existing command names and options.
+- Updated CLI documentation to describe the Typer app and the user-level login storage path.
+
 ## 0.9.5 - 2026-05-27
 
 ### Changed

@@ -2,7 +2,6 @@
 
 from typing import Any, Optional
 
-import click
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import FrameLocator, Locator, Page, sync_playwright
 
@@ -28,6 +27,10 @@ _AUTO_WAIT_ACTION_STATES = {
 }
 
 logger = setup_logging()
+
+
+class ScenarioRunnerError(RuntimeError):
+    """User-facing scenario runner error that should be rendered by the CLI."""
 
 def _wrap_result(result: Any, timeout: Optional[float]):
     """Wrap Playwright locator-like return values with auto-wait proxies."""
@@ -158,7 +161,7 @@ def run_scenario(scenario_factory, *, wait_timeout: float = DEFAULT_WAIT_TIMEOUT
             browser, context = auth.new_context()
         except PlaywrightError as exc:
             if is_missing_browser_error(exc):
-                raise click.ClickException(missing_browser_message()) from exc
+                raise ScenarioRunnerError(missing_browser_message()) from exc
             raise
         page = context.pages[0] if context.pages else context.new_page()
 

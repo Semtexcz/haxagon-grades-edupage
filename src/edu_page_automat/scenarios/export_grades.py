@@ -3,12 +3,12 @@
 import csv
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+from typing import Annotated, List
 
-import click
+import typer
 
 from edu_page_automat.logging_config import setup_logging
-from edu_page_automat.scenario_runner import run_scenario
+from edu_page_automat.scenario_runner import ScenarioRunnerError, run_scenario
 from edu_page_automat.scenarios.base import Scenario
 
 logger = setup_logging()
@@ -174,18 +174,29 @@ class ExportGradesScenario(Scenario):
 
     @classmethod
     def register_cli(cls, cli_group):
-        """Register the `export-grades` command on the provided Click group."""
+        """Register the `export-grades` command on the provided Typer app."""
 
         @cli_group.command("export-grades")
-        @click.option("--class", "class_", required=True, help="Class name (e.g., 2.png)")
-        @click.option(
-            "--output-csv",
-            "output_csv",
-            type=click.Path(path_type=Path, dir_okay=False),
-            required=True,
-            help="Path where the exported grade CSV should be written.",
-        )
-        @click.option("--subject", "subject", default="Informatika", show_default=True, help="Subject name in EduPage course list")
-        def run_export_grades(class_, output_csv, subject):
+        def run_export_grades(
+            class_: Annotated[str, typer.Option(..., "--class", help="Class name (e.g., 2.png)")],
+            output_csv: Annotated[
+                Path,
+                typer.Option(
+                    ...,
+                    "--output-csv",
+                    file_okay=True,
+                    dir_okay=False,
+                    help="Path where the exported grade CSV should be written.",
+                ),
+            ],
+            subject: Annotated[
+                str,
+                typer.Option("--subject", help="Subject name in EduPage course list", show_default=True),
+            ] = "Informatika",
+        ):
             """Export visible EduPage class grades to a CSV file."""
-            run_scenario(lambda: cls(class_, output_csv, subject=subject))
+            try:
+                run_scenario(lambda: cls(class_, output_csv, subject=subject))
+            except ScenarioRunnerError as exc:
+                typer.echo(str(exc), err=True)
+                raise typer.Exit(code=1) from exc
