@@ -55,6 +55,7 @@ poetry run edupage --help
 poetry run edupage list
 poetry run edupage install-browsers
 poetry run edupage login
+poetry run edupage --install-completion
 ```
 
 Create a task directly:

@@ -19,6 +19,17 @@ def test_cli_list_outputs_available_commands():
     assert "createtask" in result.output
 
 
+def test_cli_help_exposes_completion_commands():
+    """The Typer root app exposes shell completion management options."""
+    runner = CliRunner()
+
+    result = runner.invoke(main_cli, ["--help"])
+
+    assert result.exit_code == 0
+    assert "--install-completion" in result.output
+    assert "--show-completion" in result.output
+
+
 def test_cli_install_browsers_invokes_playwright_install(monkeypatch):
     """The browser installer command runs inside the active Python environment."""
     runner = CliRunner()

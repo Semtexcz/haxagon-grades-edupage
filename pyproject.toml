@@ -1,6 +1,6 @@
 [project]
 name = "EduPageAutomat"
-version = "0.9.7"
+version = "0.9.8"
 description = ""
 authors = [
     {name = "Daniel Kopecký",email = "kopecky.d@gmail.com"}

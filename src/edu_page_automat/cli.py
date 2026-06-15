@@ -23,7 +23,7 @@ from edu_page_automat.scenarios.fill_grades import FillGradesScenario
 logger = setup_logging()
 SCENARIOS = [CreateTaskScenario, FillGradesScenario, ExportGradesScenario]
 
-cli = typer.Typer(help="EduPage automation CLI.", add_completion=False)
+cli = typer.Typer(help="EduPage automation CLI.")
 
 
 @cli.command("list")

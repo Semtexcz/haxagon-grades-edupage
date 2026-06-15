@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## 0.9.8 - 2026-06-15
+
+### Added
+
+- Re-enabled Typer shell completion commands on the `edupage` root CLI.
+
 ## 0.9.7 - 2026-06-15
 
 ### Fixed
