@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## 0.9.9 - 2026-06-15
+
+### Fixed
+
+- Made `convert-classroom-grades` treat only the final student-name token as `prijmeni`, preserving multi-part given names in `jmeno`.
+
 ## 0.9.8 - 2026-06-15
 
 ### Added

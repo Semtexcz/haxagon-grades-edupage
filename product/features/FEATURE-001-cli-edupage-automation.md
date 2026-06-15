@@ -58,6 +58,8 @@ The `convert-classroom-grades` command converts Google Classroom grade exports i
 
 Use `--topic` or `--task` filters to keep only the Classroom rows that correspond to EduPage tasks intended for import.
 
+The converted `Student` name uses the final whitespace-delimited token as `prijmeni` and preserves every earlier token in `jmeno`.
+
 Empty Google Classroom point values are emitted as the EduPage `m` marker.
 
 ## Grade Diff

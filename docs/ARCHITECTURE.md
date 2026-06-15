@@ -68,7 +68,7 @@ The export is a snapshot of the currently visible EduPage table. Empty grade cel
 
 ## Google Classroom Grade Conversion
 
-The `convert-classroom-grades` CLI command runs offline and does not use the scenario runner or Playwright. It reads a Google Classroom grade export, optionally filters rows by Classroom topic or task name, splits the `Student` display name on whitespace into first and last name fields, and writes the EduPage grade CSV headers `jmeno`, `prijmeni`, `jmeno_ulohy`, and `pocet_bodu`.
+The `convert-classroom-grades` CLI command runs offline and does not use the scenario runner or Playwright. It reads a Google Classroom grade export, optionally filters rows by Classroom topic or task name, uses the final token in `Student` as `prijmeni` and everything before it as `jmeno`, and writes the EduPage grade CSV headers `jmeno`, `prijmeni`, `jmeno_ulohy`, and `pocet_bodu`.
 
 The converter writes empty `Points earned` values as the EduPage `m` marker. Whole-number point values are written unchanged, keeping the output compatible with `fill-grades`.
 

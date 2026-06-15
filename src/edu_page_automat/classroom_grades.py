@@ -22,11 +22,11 @@ def _find_header(fieldnames: Sequence[str], accepted_names: set[str], label: str
 
 
 def _split_student_name(student_name: str, row_index: int) -> tuple[str, str]:
-    """Split a Google Classroom student display name into first and last name."""
+    """Split a student name so only the final token becomes the surname."""
     name_parts = student_name.split()
     if len(name_parts) < 2:
         raise ValueError(f"Row {row_index}: student name must contain first and last name")
-    return name_parts[0], " ".join(name_parts[1:])
+    return " ".join(name_parts[:-1]), name_parts[-1]
 
 
 def _normalize_points(points: str, row_index: int) -> str:

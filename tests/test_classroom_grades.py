@@ -81,6 +81,34 @@ def test_convert_classroom_grades_filters_tasks(tmp_path: Path) -> None:
     assert read_rows(output_csv)[0]["jmeno_ulohy"] == "Keep"
 
 
+def test_convert_classroom_grades_uses_only_last_token_as_surname(tmp_path: Path) -> None:
+    """Multi-part given names keep every token except the final surname token."""
+    input_csv = tmp_path / "classroom.csv"
+    output_csv = tmp_path / "edupage.csv"
+    input_csv.write_text(
+        "\n".join(
+            [
+                "Student,Task,Topic,Points earned",
+                "Robert Tomáš Veselý,Task,Topic,42",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    row_count = convert_classroom_grades_csv(input_csv, output_csv)
+
+    assert row_count == 1
+    assert read_rows(output_csv) == [
+        {
+            "jmeno": "Robert Tomáš",
+            "prijmeni": "Veselý",
+            "jmeno_ulohy": "Task",
+            "pocet_bodu": "42",
+        }
+    ]
+
+
 def test_convert_classroom_grades_rejects_non_integer_points(tmp_path: Path) -> None:
     """Generated files stay compatible with the fill-grades parser."""
     input_csv = tmp_path / "classroom.csv"
