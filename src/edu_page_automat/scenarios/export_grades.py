@@ -75,11 +75,18 @@ def _normalize_exported_points(points: str) -> str:
 class ExportGradesScenario(Scenario):
     """Export all visible class grade-table cells for one EduPage course."""
 
-    def __init__(self, class_: str, output_csv: Path, subject: str = "Informatika"):
+    def __init__(
+        self,
+        class_: str,
+        output_csv: Path,
+        subject: str = "Informatika",
+        task_category: str | None = None,
+    ):
         """Initialize the target class, subject, and output CSV path."""
         self.class_ = class_
         self.subject = subject
         self.output_csv = output_csv
+        self.task_category = task_category.strip() if task_category else None
 
     def run(self, page):
         """Select the target course, extract visible grade rows, and write the CSV file."""
@@ -187,7 +194,14 @@ class ExportGradesScenario(Scenario):
         if not rows:
             raise ValueError("No grade rows were found in the current EduPage grade table")
 
-        return rows
+        if not self.task_category:
+            return rows
+
+        filtered_rows = [row for row in rows if row.task_category == self.task_category]
+        if not filtered_rows:
+            raise ValueError(f"No grade rows were found for task category {self.task_category}")
+
+        return filtered_rows
 
     @classmethod
     def register_cli(cls, cli_group):
@@ -210,10 +224,14 @@ class ExportGradesScenario(Scenario):
                 str,
                 typer.Option("--subject", help="Subject name in EduPage course list", show_default=True),
             ] = "Informatika",
+            task_category: Annotated[
+                str | None,
+                typer.Option("--task-category", help="Only export tasks from this EduPage task category."),
+            ] = None,
         ):
             """Export visible EduPage class grades to a CSV file."""
             try:
-                run_scenario(lambda: cls(class_, output_csv, subject=subject))
+                run_scenario(lambda: cls(class_, output_csv, subject=subject, task_category=task_category))
             except ScenarioRunnerError as exc:
                 typer.echo(str(exc), err=True)
                 raise typer.Exit(code=1) from exc

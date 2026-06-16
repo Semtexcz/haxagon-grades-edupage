@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## 0.11.0 - 2026-06-16
+
+### Added
+
+- Added `export-grades --task-category` to restrict exported rows to one EduPage task category.
+
 ## 0.10.0 - 2026-06-15
 
 ### Added

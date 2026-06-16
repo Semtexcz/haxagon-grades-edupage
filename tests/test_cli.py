@@ -197,6 +197,39 @@ def test_cli_export_grades_invokes_run_scenario(monkeypatch, tmp_path):
     assert scenario.class_ == "2.png"
     assert scenario.subject == "Informatika"
     assert scenario.output_csv == output_csv
+    assert scenario.task_category is None
+
+
+def test_cli_export_grades_forwards_task_category(monkeypatch, tmp_path):
+    """The export-grades command can limit the export to one task category."""
+    runner = CliRunner()
+    captured = {}
+    output_csv = tmp_path / "grades.csv"
+
+    def fake_run_scenario(factory):
+        captured["scenario"] = factory()
+
+    monkeypatch.setattr(export_grades_module, "run_scenario", fake_run_scenario)
+
+    result = runner.invoke(
+        main_cli,
+        [
+            "export-grades",
+            "--class",
+            "2.png",
+            "--output-csv",
+            str(output_csv),
+            "--subject",
+            "Informatika",
+            "--task-category",
+            "Dan - Frontend",
+        ],
+    )
+
+    assert result.exit_code == 0
+    scenario = captured["scenario"]
+    assert isinstance(scenario, export_grades_module.ExportGradesScenario)
+    assert scenario.task_category == "Dan - Frontend"
 
 
 def test_cli_convert_classroom_grades_invokes_converter(monkeypatch, tmp_path):

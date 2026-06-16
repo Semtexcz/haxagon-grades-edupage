@@ -73,6 +73,57 @@ def test_extract_grade_rows_maps_page_payload() -> None:
     ]
 
 
+def test_extract_grade_rows_filters_requested_task_category() -> None:
+    """Only rows from the requested task category are exported."""
+    scenario = ExportGradesScenario(
+        class_="2.png",
+        output_csv=Path("grades.csv"),
+        task_category="Dan - Frontend",
+    )
+    page = MagicMock()
+    page.evaluate.return_value = [
+        {
+            "studentName": "Žužlavá, Žofie",
+            "taskCategory": "Dan - Frontend",
+            "taskName": "Build an App",
+            "points": "100",
+        },
+        {
+            "studentName": "Lovelace, Ada",
+            "taskCategory": "Dan - Backend",
+            "taskName": "Build an API",
+            "points": "80",
+        },
+    ]
+
+    rows = scenario._extract_grade_rows(page)
+
+    assert rows == [
+        GradeExportRow("Žofie", "Žužlavá", "Dan - Frontend", "Build an App", "100"),
+    ]
+
+
+def test_extract_grade_rows_requires_matching_task_category() -> None:
+    """A missing requested task category fails with a focused error."""
+    scenario = ExportGradesScenario(
+        class_="2.png",
+        output_csv=Path("grades.csv"),
+        task_category="Dan - Frontend",
+    )
+    page = MagicMock()
+    page.evaluate.return_value = [
+        {
+            "studentName": "Lovelace, Ada",
+            "taskCategory": "Dan - Backend",
+            "taskName": "Build an API",
+            "points": "80",
+        },
+    ]
+
+    with pytest.raises(ValueError, match="No grade rows were found for task category Dan - Frontend"):
+        scenario._extract_grade_rows(page)
+
+
 def test_extract_grade_rows_requires_visible_grades() -> None:
     """An empty grade-table extraction fails before writing an empty CSV."""
     scenario = ExportGradesScenario(class_="2.png", output_csv=Path("grades.csv"))

@@ -64,7 +64,7 @@ The scenario assumes tasks already exist in EduPage. Task creation remains the r
 
 `ExportGradesScenario` selects the target course, opens the Známky module, reads all visible task headers from `.znamkyUdalostHeader`, and walks each visible student row in the grade table. It exports one CSV row for each visible student/task grade cell using the headers `first_name`, `last_name`, `task_category`, `task_name`, and `points`.
 
-The export is a snapshot of the currently visible EduPage table. Empty grade cells are included with an empty `points` value so the CSV can be reviewed or reused as compatible input for `fill-grades`. When EduPage displays a composite value such as `m · 20` or `15 · 20`, the export keeps only the fill-compatible leading value (`m` or `15`).
+The export is a snapshot of the currently visible EduPage table. Empty grade cells are included with an empty `points` value so the CSV can be reviewed or reused as compatible input for `fill-grades`. When EduPage displays a composite value such as `m · 20` or `15 · 20`, the export keeps only the fill-compatible leading value (`m` or `15`). The optional `--task-category` filter keeps only rows whose EduPage task category exactly matches the requested value.
 
 ## Google Classroom Grade Conversion
 
